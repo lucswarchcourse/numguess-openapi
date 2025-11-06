@@ -1,4 +1,4 @@
-# Number Guessing Game API — Modernization Notes
+# Number Guessing Game - API First
 
 ## Background
 
