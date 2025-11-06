@@ -148,7 +148,6 @@ paths:
               schema:
                 type: string
                 format: html
-              description: Redirects to the game resource
             application/json:
               schema:
                 $ref: '#/components/schemas/GameCreationResponse'
@@ -287,7 +286,6 @@ paths:
               schema:
                 type: string
                 format: html
-              description: Result page with outcome and option to guess again
             application/json:
               schema:
                 $ref: '#/components/schemas/GuessResult'
