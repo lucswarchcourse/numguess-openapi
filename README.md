@@ -20,7 +20,7 @@ We’re trying to take an API‑first approach:
 - Evolve behavior in the spec first; generate and/or implement code from it
 - Keep clients, docs, and tests aligned via code generation and examples derived from the spec
 
-The API documentation is generated using `redocly` and available [here](doc/redoc-static.html).
+The API documentation is generated using `redocly` and available [here](https://htmlpreview.github.io/?doc/redoc-static.html).
 
 ## Where we’re headed next
 
