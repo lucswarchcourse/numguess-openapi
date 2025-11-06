@@ -1,0 +1,469 @@
+openapi: 3.0.3
+info:
+  title: Number Guessing Game API
+  description: |
+    A RESTful API for a number guessing game.
+    
+    The game allows players to:
+    - Create new game instances
+    - Submit guesses for a number between 1 and 100
+    - Track the number of guesses and best scores
+    
+    The API follows HATEOAS principles by providing links to related resources.
+  version: 1.0.0
+  contact:
+    name: Loyola University Chicago COMP 373/473 Software Architecture Course
+    url: https://github.com/lucswarchcourse/numguess-openapi
+
+servers:
+  - url: http://localhost:3000/numguess-restlet
+    description: Standalone server
+  - url: http://localhost:8080/numguess-restlet
+    description: Servlet container deployment
+
+tags:
+  - name: games
+    description: Operations for managing game collections
+  - name: game
+    description: Operations for individual game instances
+
+paths:
+  /:
+    get:
+      summary: Get API root
+      description: |
+        Returns the API root resource. 
+        This endpoint serves as the entry point to the API and typically redirects to `/games`.
+        
+        Implementation note: Consider using HTTP 303 See Other redirect to `/games` for HTML clients,
+        or returning a JSON representation with links to available resources (HATEOAS).
+      tags:
+        - games
+      responses:
+        '200':
+          description: API root representation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  links:
+                    type: object
+                    properties:
+                      games:
+                        type: string
+                        format: uri
+                        example: http://localhost:3000/numguess-restlet/games
+        '303':
+          description: See Other - Redirect to /games
+          headers:
+            Location:
+              description: URI of the games collection
+              schema:
+                type: string
+                format: uri
+                example: http://localhost:3000/numguess-restlet/games
+
+  /games:
+    get:
+      summary: Get welcome page or games collection
+      description: |
+        Returns a welcome page (HTML) or games collection representation (JSON).
+        For HTML clients, this displays a form to start a new game.
+      tags:
+        - games
+      parameters:
+        - name: Accept
+          in: header
+          description: Content type preference
+          schema:
+            type: string
+            enum:
+              - application/xhtml+xml
+              - application/json
+            default: application/xhtml+xml
+      responses:
+        '200':
+          description: Welcome page or games collection representation
+          content:
+            application/xhtml+xml:
+              schema:
+                type: string
+                format: html
+              example: |
+                <html>
+                  <head><title>Number Guessing Game: Welcome</title></head>
+                  <body>
+                    <form method="post" action="">
+                      <div>
+                        <input type="submit" value="play" />
+                      </div>
+                    </form>
+                  </body>
+                </html>
+            application/json:
+              schema:
+                type: object
+                description: Games collection representation (if supported)
+    
+    post:
+      summary: Create a new game
+      description: |
+        Creates a new number guessing game instance and returns a link to it.
+        The game is initialized with a random number between 1 and 100.
+        A UUID is generated to uniquely identify the new game instance.
+        
+        Following HATEOAS principles, the response includes a link to the newly created game resource.
+      tags:
+        - games
+      requestBody:
+        description: Empty body or form data (optional)
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+      parameters:
+        - name: Accept
+          in: header
+          description: Content type preference
+          schema:
+            type: string
+            enum:
+              - application/xhtml+xml
+              - application/json
+            default: application/xhtml+xml
+      responses:
+        '201':
+          description: Game created successfully
+          headers:
+            Location:
+              description: URI of the newly created game resource
+              schema:
+                type: string
+                format: uri
+                example: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+          content:
+            application/xhtml+xml:
+              schema:
+                type: string
+                format: html
+              description: Redirects to the game resource
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameCreationResponse'
+              example:
+                href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{uuid}:
+    get:
+      summary: Get game representation
+      description: |
+        Returns a form (HTML) or game state representation (JSON) for submitting guesses.
+        The game allows guessing numbers between 1 and 100.
+      tags:
+        - game
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The unique identifier (UUID) of the game
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+        - name: Accept
+          in: header
+          description: Content type preference
+          schema:
+            type: string
+            enum:
+              - application/xhtml+xml
+              - application/json
+            default: application/xhtml+xml
+      responses:
+        '200':
+          description: Game representation
+          content:
+            application/xhtml+xml:
+              schema:
+                type: string
+                format: html
+              example: |
+                <html>
+                  <head><title>Number Guessing Game: Guess</title></head>
+                  <body>
+                    <p>Please submit your guess between 1 and 100.</p>
+                    <form method="post" action="">
+                      <div>
+                        <input type="text" name="guess" />
+                        <input type="submit" value="guess" />
+                      </div>
+                    </form>
+                  </body>
+                </html>
+            application/json:
+              schema:
+                type: object
+                description: Game state representation (if supported)
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Submit a guess
+      description: |
+        Submits a guess for the specified game. The guess is compared against the secret number,
+        and a result is returned indicating whether the guess was correct, too high, or too low.
+        
+        The response includes:
+        - The submitted guess value
+        - Comparison result (0 = correct, positive = too high, negative = too low)
+        - Number of guesses made so far
+        - Best score across all games
+        - Whether this is a new best score
+        
+        Following HATEOAS principles, the response may include links to continue playing.
+      tags:
+        - game
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The unique identifier (UUID) of the game
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+        - name: Accept
+          in: header
+          description: Content type preference
+          schema:
+            type: string
+            enum:
+              - application/xhtml+xml
+              - application/json
+            default: application/xhtml+xml
+      requestBody:
+        required: true
+        description: The guess value
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - guess
+              properties:
+                guess:
+                  type: integer
+                  description: The guessed number (must be between 1 and 100)
+                  minimum: 1
+                  maximum: 100
+                  example: 50
+            encoding:
+              guess:
+                style: form
+                explode: false
+      responses:
+        '201':
+          description: Guess processed successfully
+          content:
+            application/xhtml+xml:
+              schema:
+                type: string
+                format: html
+              description: Result page with outcome and option to guess again
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuessResult'
+              examples:
+                correct:
+                  summary: Correct guess
+                  value:
+                    guess: 42
+                    comparison: 0
+                    numGuesses: 7
+                    bestScore: 7
+                    newBestScore: true
+                tooLow:
+                  summary: Guess too low
+                  value:
+                    guess: 25
+                    comparison: -17
+                    numGuesses: 3
+                    bestScore: 5
+                    newBestScore: false
+                tooHigh:
+                  summary: Guess too high
+                  value:
+                    guess: 75
+                    comparison: 33
+                    numGuesses: 2
+                    bestScore: 5
+                    newBestScore: false
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Bad request (invalid guess format or value)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Delete a game instance
+      description: |
+        Deletes the specified game instance identified by its UUID.
+        This removes the game from the collection of active games.
+        
+        Following REST principles, this operation is idempotent - deleting a non-existent game
+        should return 404, but deleting the same game multiple times has the same effect as deleting it once.
+      tags:
+        - game
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: The unique identifier (UUID) of the game to delete
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '204':
+          description: Game deleted successfully (No Content)
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Game not found"
+                status: 404
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    GameCreationResponse:
+      type: object
+      description: Response containing a link to the newly created game resource (HATEOAS)
+      required:
+        - href
+      properties:
+        href:
+          type: string
+          format: uri
+          description: URI of the newly created game resource (with UUID)
+          example: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+    
+    GuessResult:
+      type: object
+      description: Result of a guess submission
+      required:
+        - guess
+        - comparison
+        - numGuesses
+        - bestScore
+        - newBestScore
+      properties:
+        guess:
+          type: integer
+          description: The guessed number that was submitted
+          example: 42
+        comparison:
+          type: integer
+          description: |
+            Comparison result:
+            - 0: guess is correct
+            - positive value: guess is too high (difference from correct answer)
+            - negative value: guess is too low (difference from correct answer)
+          example: 0
+        numGuesses:
+          type: integer
+          description: Total number of guesses made in this game so far
+          minimum: 1
+          example: 7
+        bestScore:
+          type: integer
+          description: Best score (lowest number of guesses) across all games
+          minimum: 1
+          example: 5
+        newBestScore:
+          type: boolean
+          description: Whether this guess resulted in a new best score (only true when guess is correct and sets a new record)
+          example: true
+    
+    Error:
+      type: object
+      description: Error response
+      properties:
+        error:
+          type: string
+          description: Error message
+        status:
+          type: integer
+          description: HTTP status code
+
+  examples:
+    CreateGame:
+      summary: Create a new game
+      description: Example request to create a new game
+      value:
+        method: POST
+        url: http://localhost:3000/numguess-restlet/games/
+        headers:
+          Accept: application/json
+        body: {}
+    
+    SubmitGuess:
+      summary: Submit a guess
+      description: Example request to submit a guess
+      value:
+        method: POST
+        url: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        headers:
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body:
+          guess: 50
+    
+    DeleteGame:
+      summary: Delete a game
+      description: Example request to delete a game instance
+      value:
+        method: DELETE
+        url: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        headers:
+          Accept: application/json
+
