@@ -111,7 +111,10 @@ public class HtmlRepresentationBuilder {
      * @return HTML string
      */
     public static String buildGameActiveHtml(UUID uuid, Game game) {
-        return String.format("""
+        String uuidStr = uuid.toString();
+        int numGuesses = game.getNumGuesses();
+
+        return """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -257,12 +260,12 @@ public class HtmlRepresentationBuilder {
                         <div class="game-stats">
                             <div class="stat">
                                 <div class="stat-label">Guesses</div>
-                                <div class="stat-value">%d</div>
+                                <div class="stat-value">NUMGUESSES_PLACEHOLDER</div>
                             </div>
                         </div>
                     </div>
 
-                    <form method="POST" action="/numguess/games/%s" class="input-group">
+                    <form method="POST" action="/numguess/games/UUID_PLACEHOLDER" class="input-group">
                         <input type="number" name="guess" min="1" max="100" placeholder="Enter your guess..." required>
                         <button type="submit" class="btn-primary">Guess</button>
                     </form>
@@ -278,7 +281,8 @@ public class HtmlRepresentationBuilder {
                 </div>
             </body>
             </html>
-            """, game.getNumGuesses(), uuid.toString());
+            """.replace("NUMGUESSES_PLACEHOLDER", String.valueOf(numGuesses))
+               .replace("UUID_PLACEHOLDER", uuidStr);
     }
 
     /**
