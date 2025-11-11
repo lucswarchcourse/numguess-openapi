@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(sed:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mvn clean package:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd guess feedback hint to HTML game display\n\n- Added getLastGuessOutcome() method to Game model to determine feedback\n- Enhanced buildGameActiveHtml() to display contextual feedback messages:\n  * \"📈 Your guess is too low. Try a higher number.\"\n  * \"📉 Your guess is too high. Try a lower number.\"\n  * \"🎉 Correct! You won!\" (for completed games)\n- Fixed buildGameCompleteHtml() String.format() parsing issue by using placeholder replacement\n- Feedback message updates dynamically after each guess submission\n- Maintains state-driven affordances with proper HTML form handling\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
