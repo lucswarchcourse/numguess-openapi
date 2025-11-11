@@ -284,7 +284,7 @@ class HtmlRepresentationBuilderTest {
         }
 
         @Test
-        @DisplayName("should include CSS styling")
+        @DisplayName("should include CSS styling via external files")
         void shouldIncludeCssstyling() {
             Game game = new Game(testGameId);
 
@@ -292,9 +292,18 @@ class HtmlRepresentationBuilderTest {
             String html2 = htmlBuilder.buildGameActiveHtml(testGameId, game);
             String html3 = htmlBuilder.buildGameCompleteHtml(testGameId, 5);
 
-            assertTrue(html1.contains("<style>"));
-            assertTrue(html2.contains("<style>"));
-            assertTrue(html3.contains("<style>"));
+            // Check for CSS link tags for variables, common, and game styles
+            assertTrue(html1.contains("href=\"/css/variables.css\""));
+            assertTrue(html1.contains("href=\"/css/common.css\""));
+            assertTrue(html1.contains("href=\"/css/game.css\""));
+
+            assertTrue(html2.contains("href=\"/css/variables.css\""));
+            assertTrue(html2.contains("href=\"/css/common.css\""));
+            assertTrue(html2.contains("href=\"/css/game.css\""));
+
+            assertTrue(html3.contains("href=\"/css/variables.css\""));
+            assertTrue(html3.contains("href=\"/css/common.css\""));
+            assertTrue(html3.contains("href=\"/css/game.css\""));
         }
 
         @Test
