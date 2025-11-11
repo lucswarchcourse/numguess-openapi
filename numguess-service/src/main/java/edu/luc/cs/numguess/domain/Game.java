@@ -56,6 +56,25 @@ public class Game {
     }
 
     /**
+     * Returns the outcome of the last guess, or null if no guesses have been made.
+     *
+     * @return the outcome of the most recent guess (CORRECT, TOO_LOW, TOO_HIGH), or null
+     */
+    public GuessOutcome getLastGuessOutcome() {
+        if (guesses.isEmpty()) {
+            return null;
+        }
+        int lastGuess = guesses.get(guesses.size() - 1);
+        if (lastGuess == secretNumber) {
+            return GuessOutcome.CORRECT;
+        } else if (lastGuess < secretNumber) {
+            return GuessOutcome.TOO_LOW;
+        } else {
+            return GuessOutcome.TOO_HIGH;
+        }
+    }
+
+    /**
      * Submits a guess and returns the outcome.
      * Marks the game as inactive if the guess is correct.
      *

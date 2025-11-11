@@ -114,6 +114,23 @@ public class HtmlRepresentationBuilder {
         String uuidStr = uuid.toString();
         int numGuesses = game.getNumGuesses();
 
+        // Build feedback message based on last guess outcome
+        String feedbackMessage = "Please submit your guess between 1 and 100.";
+        Game.GuessOutcome lastOutcome = game.getLastGuessOutcome();
+        if (lastOutcome != null) {
+            switch (lastOutcome) {
+                case TOO_LOW:
+                    feedbackMessage = "📈 Your guess is too low. Try a higher number.";
+                    break;
+                case TOO_HIGH:
+                    feedbackMessage = "📉 Your guess is too high. Try a lower number.";
+                    break;
+                case CORRECT:
+                    feedbackMessage = "🎉 Correct! You won!";
+                    break;
+            }
+        }
+
         return """
             <!DOCTYPE html>
             <html lang="en">
@@ -256,7 +273,7 @@ public class HtmlRepresentationBuilder {
                     <p class="subtitle">Guess the number between 1 and 100</p>
 
                     <div class="game-status">
-                        <div class="game-message">Please submit your guess between 1 and 100.</div>
+                        <div class="game-message">FEEDBACK_MESSAGE_PLACEHOLDER</div>
                         <div class="game-stats">
                             <div class="stat">
                                 <div class="stat-label">Guesses</div>
@@ -281,7 +298,8 @@ public class HtmlRepresentationBuilder {
                 </div>
             </body>
             </html>
-            """.replace("NUMGUESSES_PLACEHOLDER", String.valueOf(numGuesses))
+            """.replace("FEEDBACK_MESSAGE_PLACEHOLDER", feedbackMessage)
+               .replace("NUMGUESSES_PLACEHOLDER", String.valueOf(numGuesses))
                .replace("UUID_PLACEHOLDER", uuidStr);
     }
 
@@ -294,7 +312,9 @@ public class HtmlRepresentationBuilder {
      * @return HTML string
      */
     public static String buildGameCompleteHtml(UUID uuid, int numGuesses) {
-        return String.format("""
+        String numGuessesStr = String.valueOf(numGuesses);
+
+        return """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -414,11 +434,11 @@ public class HtmlRepresentationBuilder {
 
                     <div class="game-complete">
                         <p>🎉 Congratulations!</p>
-                        <p>You guessed the correct number in <strong>%d</strong> tries!</p>
+                        <p>You guessed the correct number in <strong>NUMGUESSES_PLACEHOLDER</strong> tries!</p>
                         <div class="game-stats">
                             <div class="stat">
                                 <div class="stat-label">Total Guesses</div>
-                                <div class="stat-value">%d</div>
+                                <div class="stat-value">NUMGUESSES_PLACEHOLDER</div>
                             </div>
                         </div>
                     </div>
@@ -434,6 +454,6 @@ public class HtmlRepresentationBuilder {
                 </div>
             </body>
             </html>
-            """, numGuesses, numGuesses);
+            """.replace("NUMGUESSES_PLACEHOLDER", numGuessesStr);
     }
 }
