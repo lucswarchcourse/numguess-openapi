@@ -1,22 +1,13 @@
 package org.openapitools.api;
 
-import org.openapitools.model.Error;
-import org.openapitools.model.GameState;
-import org.openapitools.model.GuessResult;
-import org.springframework.lang.Nullable;
-import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
+import java.util.UUID;
 
 /**
  * A delegate to be called by the {@link GameApiController}}.

@@ -1,21 +1,11 @@
 package org.openapitools.api;
 
 import org.openapitools.model.ApiRoot;
-import org.openapitools.model.Error;
-import org.openapitools.model.GameCreationResponse;
-import org.openapitools.model.GamesCollection;
-import org.springframework.lang.Nullable;
-import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
