@@ -72,8 +72,14 @@ public class ErrorResponseBuilder {
             final var jsonError = objectMapper.writeValueAsString(error);
             return ResponseEntity.status(status).body(jsonError);
         } catch (Exception e) {
-            // Fallback if JSON serialization fails
-            return ResponseEntity.status(status).body("{\"error\":\"" + message + "\",\"status\":" + status.value() + "}");
+            // Fallback if JSON serialization fails (Java 15+ text block)
+            final var fallbackJson = """
+                {
+                  "error": "%s",
+                  "status": %d
+                }
+                """.formatted(message, status.value());
+            return ResponseEntity.status(status).body(fallbackJson);
         }
     }
 }

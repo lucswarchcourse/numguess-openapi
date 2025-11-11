@@ -170,27 +170,28 @@ public class GameApiDelegateImpl implements GameApiDelegate {
             result.setNumGuesses(game.getNumGuesses());
             result.setBestScore(gameService.getBestScore());
 
-            // Set result enum and message based on outcome
-            switch (outcome) {
-                case CORRECT:
-                    result.setResult(GuessResult.ResultEnum.CORRECT);
-                    result.setMessage("Congratulations! You guessed the correct number in " + game.getNumGuesses() + " tries!");
-                    final var newBestScore = gameService.updateBestScore(game.getNumGuesses());
-                    result.setNewBestScore(newBestScore);
-                    if (newBestScore) {
-                        result.setBestScore(game.getNumGuesses());
-                    }
-                    break;
-                case TOO_LOW:
-                    result.setResult(GuessResult.ResultEnum.TOO_LOW);
-                    result.setMessage("Your guess is too low. Try a higher number.");
-                    result.setNewBestScore(false);
-                    break;
-                case TOO_HIGH:
-                    result.setResult(GuessResult.ResultEnum.TOO_HIGH);
-                    result.setMessage("Your guess is too high. Try a lower number.");
-                    result.setNewBestScore(false);
-                    break;
+            // Set result enum and message based on outcome (Java 21+ switch expressions)
+            result.setResult(switch (outcome) {
+                case CORRECT -> GuessResult.ResultEnum.CORRECT;
+                case TOO_LOW -> GuessResult.ResultEnum.TOO_LOW;
+                case TOO_HIGH -> GuessResult.ResultEnum.TOO_HIGH;
+            });
+
+            result.setMessage(switch (outcome) {
+                case CORRECT -> "Congratulations! You guessed the correct number in " + game.getNumGuesses() + " tries!";
+                case TOO_LOW -> "Your guess is too low. Try a higher number.";
+                case TOO_HIGH -> "Your guess is too high. Try a lower number.";
+            });
+
+            // Handle best score update for correct guesses
+            if (outcome == Game.GuessOutcome.CORRECT) {
+                final var newBestScore = gameService.updateBestScore(game.getNumGuesses());
+                result.setNewBestScore(newBestScore);
+                if (newBestScore) {
+                    result.setBestScore(game.getNumGuesses());
+                }
+            } else {
+                result.setNewBestScore(false);
             }
 
             // Build hypermedia links - STATE-DRIVEN AFFORDANCES

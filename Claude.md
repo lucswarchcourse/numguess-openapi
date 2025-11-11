@@ -4,7 +4,7 @@ This document outlines the code style, architecture, and best practices for this
 
 ## Java Modernization Standards
 
-This project uses **Java 21** with modern language features and APIs. All code must follow these standards:
+This project uses **Java 25** with modern language features and APIs. All code must follow these standards:
 
 ### 1. Final Correctness
 

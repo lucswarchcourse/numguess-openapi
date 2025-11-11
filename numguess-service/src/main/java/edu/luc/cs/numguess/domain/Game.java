@@ -72,13 +72,11 @@ public class Game {
             return null;
         }
         final int lastGuess = guesses.get(guesses.size() - 1);
-        if (lastGuess == secretNumber) {
-            return GuessOutcome.CORRECT;
-        } else if (lastGuess < secretNumber) {
-            return GuessOutcome.TOO_LOW;
-        } else {
-            return GuessOutcome.TOO_HIGH;
-        }
+        return switch (Integer.compare(lastGuess, secretNumber)) {
+            case 0 -> GuessOutcome.CORRECT;
+            case -1 -> GuessOutcome.TOO_LOW;
+            default -> GuessOutcome.TOO_HIGH;
+        };
     }
 
     /**
@@ -91,14 +89,14 @@ public class Game {
     public GuessOutcome submitGuess(final int guess) {
         guesses.add(guess);
 
-        if (guess == secretNumber) {
-            active = false;
-            return GuessOutcome.CORRECT;
-        } else if (guess < secretNumber) {
-            return GuessOutcome.TOO_LOW;
-        } else {
-            return GuessOutcome.TOO_HIGH;
-        }
+        return switch (Integer.compare(guess, secretNumber)) {
+            case 0 -> {
+                active = false;
+                yield GuessOutcome.CORRECT;
+            }
+            case -1 -> GuessOutcome.TOO_LOW;
+            default -> GuessOutcome.TOO_HIGH;
+        };
     }
 
     /**
