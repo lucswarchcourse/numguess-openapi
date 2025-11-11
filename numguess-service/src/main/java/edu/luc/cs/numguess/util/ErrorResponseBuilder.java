@@ -22,7 +22,7 @@ public class ErrorResponseBuilder {
 
     private final ObjectMapper objectMapper;
 
-    public ErrorResponseBuilder(ObjectMapper objectMapper) {
+    public ErrorResponseBuilder(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -32,7 +32,7 @@ public class ErrorResponseBuilder {
      * @param message the error message
      * @return ResponseEntity with 404 status and error JSON body
      */
-    public ResponseEntity<String> notFound(String message) {
+    public ResponseEntity<String> notFound(final String message) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, message);
     }
 
@@ -42,7 +42,7 @@ public class ErrorResponseBuilder {
      * @param message the error message
      * @return ResponseEntity with 400 status and error JSON body
      */
-    public ResponseEntity<String> badRequest(String message) {
+    public ResponseEntity<String> badRequest(final String message) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
     }
 
@@ -52,7 +52,7 @@ public class ErrorResponseBuilder {
      * @param message the error message
      * @return ResponseEntity with 500 status and error JSON body
      */
-    public ResponseEntity<String> internalServerError(String message) {
+    public ResponseEntity<String> internalServerError(final String message) {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message);
     }
 
@@ -63,13 +63,13 @@ public class ErrorResponseBuilder {
      * @param message the error message
      * @return ResponseEntity with the specified status and error JSON body
      */
-    public ResponseEntity<String> buildErrorResponse(HttpStatus status, String message) {
-        Error error = new Error();
+    public ResponseEntity<String> buildErrorResponse(final HttpStatus status, final String message) {
+        final var error = new Error();
         error.setError(message);
         error.setStatus(status.value());
 
         try {
-            String jsonError = objectMapper.writeValueAsString(error);
+            final var jsonError = objectMapper.writeValueAsString(error);
             return ResponseEntity.status(status).body(jsonError);
         } catch (Exception e) {
             // Fallback if JSON serialization fails

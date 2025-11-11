@@ -34,7 +34,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     private NativeWebRequest request;
 
     @Autowired
-    public GamesApiDelegateImpl(GameService gameService, HateoasLinkBuilder linkBuilder, ObjectMapper objectMapper, HtmlRepresentationBuilder htmlBuilder) {
+    public GamesApiDelegateImpl(final GameService gameService, final HateoasLinkBuilder linkBuilder, final ObjectMapper objectMapper, final HtmlRepresentationBuilder htmlBuilder) {
         this.gameService = gameService;
         this.linkBuilder = linkBuilder;
         this.objectMapper = objectMapper;
@@ -55,7 +55,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
      * @return GamesCollection with hypermedia controls as JSON string, or HTML page
      */
     @Override
-    public ResponseEntity<String> gamesGet(String accept) {
+    public ResponseEntity<String> gamesGet(final String accept) {
         try {
             // Content negotiation: check if browser is requesting HTML
             if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
@@ -65,19 +65,19 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             }
 
             // Default to JSON response for API clients
-            GamesCollection collection = new GamesCollection();
+            final var collection = new GamesCollection();
             collection.setMessage("Welcome to the Number Guessing Game! Create a new game to start playing.");
             collection.setTotalGames(gameService.getTotalGames());
 
             // Build hypermedia links
-            GamesCollectionLinks links = new GamesCollectionLinks();
+            final var links = new GamesCollectionLinks();
             links.setSelf(linkBuilder.buildGamesCollectionLink());
             links.setCreateGame(linkBuilder.buildNewGameLink());
             links.setRoot(linkBuilder.buildApiRootLink());
 
             collection.setLinks(links);
 
-            String jsonResponse = objectMapper.writeValueAsString(collection);
+            final var jsonResponse = objectMapper.writeValueAsString(collection);
             return ResponseEntity.ok(jsonResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
@@ -93,7 +93,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
      * @return GameCreationResponse with full hypermedia controls as JSON string, or redirect to game page
      */
     @Override
-    public ResponseEntity<String> gamesPost(String accept) {
+    public ResponseEntity<String> gamesPost(final String accept) {
         try {
             // Create the game
             var game = gameService.createGame();
@@ -107,12 +107,12 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             }
 
             // Default to JSON response for API clients
-            GameCreationResponse response = new GameCreationResponse();
+            final var response = new GameCreationResponse();
             response.setGameId(game.getId());
             response.setMessage("Game created successfully. Submit your first guess!");
 
             // Build hypermedia links - game is always active at creation
-            GameCreationResponseLinks links = new GameCreationResponseLinks();
+            final var links = new GameCreationResponseLinks();
             links.setSelf(linkBuilder.buildSelfLink(game.getId()));
             links.setSubmitGuess(linkBuilder.buildSubmitGuessLink(game.getId()));
             links.setDelete(linkBuilder.buildDeleteGameLink(game.getId()));
@@ -120,7 +120,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
             response.setLinks(links);
 
-            String jsonResponse = objectMapper.writeValueAsString(response);
+            final var jsonResponse = objectMapper.writeValueAsString(response);
 
             // Set Location header per REST conventions
             return ResponseEntity

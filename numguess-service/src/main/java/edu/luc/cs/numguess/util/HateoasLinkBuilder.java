@@ -34,7 +34,7 @@ public class HateoasLinkBuilder {
      * @param gameId the UUID of the game
      * @return Link for GET /games/{gameId}
      */
-    public Link buildSelfLink(UUID gameId) {
+    public Link buildSelfLink(final UUID gameId) {
         return new Link()
             .href(URI.create(getBaseUrl() + "/games/" + gameId))
             .method(Link.MethodEnum.GET)
@@ -74,7 +74,7 @@ public class HateoasLinkBuilder {
      * @param gameId the UUID of the game
      * @return Link for POST /games/{gameId}
      */
-    public Link buildSubmitGuessLink(UUID gameId) {
+    public Link buildSubmitGuessLink(final UUID gameId) {
         return new Link()
             .href(URI.create(getBaseUrl() + "/games/" + gameId))
             .method(Link.MethodEnum.POST)
@@ -88,7 +88,7 @@ public class HateoasLinkBuilder {
      * @param gameId the UUID of the game
      * @return Link for DELETE /games/{gameId}
      */
-    public Link buildDeleteGameLink(UUID gameId) {
+    public Link buildDeleteGameLink(final UUID gameId) {
         return new Link()
             .href(URI.create(getBaseUrl() + "/games/" + gameId))
             .method(Link.MethodEnum.DELETE)

@@ -26,8 +26,8 @@ public class GameService {
      * @return the newly created Game
      */
     public Game createGame() {
-        UUID id = UUID.randomUUID();
-        Game game = new Game(id);
+        final var id = UUID.randomUUID();
+        final var game = new Game(id);
         games.put(id, game);
         return game;
     }
@@ -38,7 +38,7 @@ public class GameService {
      * @param id the game UUID
      * @return Optional containing the game if found
      */
-    public Optional<Game> getGame(UUID id) {
+    public Optional<Game> getGame(final UUID id) {
         return Optional.ofNullable(games.get(id));
     }
 
@@ -47,7 +47,7 @@ public class GameService {
      *
      * @param id the game UUID
      */
-    public void deleteGame(UUID id) {
+    public void deleteGame(final UUID id) {
         games.remove(id);
     }
 
@@ -66,7 +66,7 @@ public class GameService {
      * @return best score, or 0 if no games have been completed
      */
     public int getBestScore() {
-        int current = bestScore.get();
+        final var current = bestScore.get();
         return current == Integer.MAX_VALUE ? 0 : current;
     }
 
@@ -76,7 +76,7 @@ public class GameService {
      * @param score the number of guesses in a completed game
      * @return true if this is a new best score, false otherwise
      */
-    public boolean updateBestScore(int score) {
+    public boolean updateBestScore(final int score) {
         int oldValue;
         int newValue;
         do {

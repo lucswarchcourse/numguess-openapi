@@ -24,7 +24,7 @@ public class HtmlRepresentationBuilder {
 
     private final TemplateEngine templateEngine;
 
-    public HtmlRepresentationBuilder(TemplateEngine templateEngine) {
+    public HtmlRepresentationBuilder(final TemplateEngine templateEngine) {
         this.templateEngine = templateEngine;
     }
 
@@ -35,7 +35,7 @@ public class HtmlRepresentationBuilder {
      * @return HTML string
      */
     public String buildGamesCollectionHtml() {
-        Context context = new Context();
+        final var context = new Context();
         return templateEngine.process("games-collection", context);
     }
 
@@ -48,10 +48,10 @@ public class HtmlRepresentationBuilder {
      * @param game the game object with current state
      * @return HTML string
      */
-    public String buildGameActiveHtml(UUID uuid, Game game) {
-        String feedbackMessage = buildFeedbackMessage(game.getLastGuessOutcome());
+    public String buildGameActiveHtml(final UUID uuid, final Game game) {
+        final var feedbackMessage = buildFeedbackMessage(game.getLastGuessOutcome());
 
-        Context context = new Context();
+        final var context = new Context();
         context.setVariable("uuid", uuid);
         context.setVariable("numGuesses", game.getNumGuesses());
         context.setVariable("feedbackMessage", feedbackMessage);
@@ -67,8 +67,8 @@ public class HtmlRepresentationBuilder {
      * @param numGuesses the number of guesses taken
      * @return HTML string
      */
-    public String buildGameCompleteHtml(UUID uuid, int numGuesses) {
-        Context context = new Context();
+    public String buildGameCompleteHtml(final UUID uuid, final int numGuesses) {
+        final var context = new Context();
         context.setVariable("numGuesses", numGuesses);
 
         return templateEngine.process("game-complete", context);
@@ -81,7 +81,7 @@ public class HtmlRepresentationBuilder {
      * @param lastOutcome the outcome of the last guess, or null if no guesses made
      * @return feedback message string
      */
-    private String buildFeedbackMessage(Game.GuessOutcome lastOutcome) {
+    private String buildFeedbackMessage(final Game.GuessOutcome lastOutcome) {
         if (lastOutcome == null) {
             return "Please submit your guess between 1 and 100.";
         }

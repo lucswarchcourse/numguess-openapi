@@ -24,7 +24,7 @@ public class ContentNegotiationUtil {
      * @param acceptHeader the value of the Accept HTTP header, may be null
      * @return true if HTML content is requested, false otherwise
      */
-    public static boolean isHtmlRequest(String acceptHeader) {
+    public static boolean isHtmlRequest(final String acceptHeader) {
         if (acceptHeader == null) {
             return false;
         }
@@ -38,7 +38,7 @@ public class ContentNegotiationUtil {
      * @param acceptHeader the value of the Accept HTTP header, may be null
      * @return true if JSON content is explicitly requested or acceptHeader is null/doesn't request HTML
      */
-    public static boolean isJsonRequest(String acceptHeader) {
+    public static boolean isJsonRequest(final String acceptHeader) {
         return !isHtmlRequest(acceptHeader);
     }
 }

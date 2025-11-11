@@ -38,7 +38,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
     private NativeWebRequest request;
 
     @Autowired
-    public GameApiDelegateImpl(GameService gameService, HateoasLinkBuilder linkBuilder, ObjectMapper objectMapper, HtmlRepresentationBuilder htmlBuilder) {
+    public GameApiDelegateImpl(final GameService gameService, final HateoasLinkBuilder linkBuilder, final ObjectMapper objectMapper, final HtmlRepresentationBuilder htmlBuilder) {
         this.gameService = gameService;
         this.linkBuilder = linkBuilder;
         this.objectMapper = objectMapper;
@@ -60,19 +60,19 @@ public class GameApiDelegateImpl implements GameApiDelegate {
      * @return GameState with hypermedia controls, HTML representation, or 404 if game not found
      */
     @Override
-    public ResponseEntity<String> gamesUuidGet(UUID uuid, String accept) {
+    public ResponseEntity<String> gamesUuidGet(final UUID uuid, final String accept) {
         try {
-            Optional<Game> gameOpt = gameService.getGame(uuid);
+            final var gameOpt = gameService.getGame(uuid);
 
             if (gameOpt.isEmpty()) {
-                Error error = new Error();
+                final var error = new Error();
                 error.setError("Game not found");
                 error.setStatus(404);
-                String jsonError = objectMapper.writeValueAsString(error);
+                final var jsonError = objectMapper.writeValueAsString(error);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(jsonError);
             }
 
-            Game game = gameOpt.get();
+            final var game = gameOpt.get();
 
             // Content negotiation: check if browser is requesting HTML
             if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
@@ -88,7 +88,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
             }
 
             // Default to JSON response for API clients
-            GameState gameState = new GameState();
+            final var gameState = new GameState();
             gameState.setGameId(uuid);
             gameState.setNumGuesses(game.getNumGuesses());
             gameState.setActive(game.isActive());
@@ -97,7 +97,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
                 : "Game complete! You won.");
 
             // Build hypermedia links - STATE-DRIVEN AFFORDANCES
-            GameStateLinks links = new GameStateLinks();
+            final var links = new GameStateLinks();
             links.setSelf(linkBuilder.buildSelfLink(uuid));
             links.setDelete(linkBuilder.buildDeleteGameLink(uuid));
             links.setNewGame(linkBuilder.buildNewGameLink());
@@ -110,7 +110,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
 
             gameState.setLinks(links);
 
-            String jsonResponse = objectMapper.writeValueAsString(gameState);
+            final var jsonResponse = objectMapper.writeValueAsString(gameState);
             return ResponseEntity.ok(jsonResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -129,31 +129,31 @@ public class GameApiDelegateImpl implements GameApiDelegate {
      * @return GuessResult with hypermedia, HTML redirect, or 404/400 on error
      */
     @Override
-    public ResponseEntity<String> gamesUuidPost(UUID uuid, Integer guess, String accept) {
+    public ResponseEntity<String> gamesUuidPost(final UUID uuid, final Integer guess, final String accept) {
         try {
             // Validate guess input
             if (guess == null || guess < 1 || guess > 100) {
-                Error error = new Error();
+                final var error = new Error();
                 error.setError("Invalid guess: must be between 1 and 100");
                 error.setStatus(400);
-                String jsonError = objectMapper.writeValueAsString(error);
+                final var jsonError = objectMapper.writeValueAsString(error);
                 return ResponseEntity.badRequest().body(jsonError);
             }
 
             // Get the game
-            Optional<Game> gameOpt = gameService.getGame(uuid);
+            final var gameOpt = gameService.getGame(uuid);
             if (gameOpt.isEmpty()) {
-                Error error = new Error();
+                final var error = new Error();
                 error.setError("Game not found");
                 error.setStatus(404);
-                String jsonError = objectMapper.writeValueAsString(error);
+                final var jsonError = objectMapper.writeValueAsString(error);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(jsonError);
             }
 
-            Game game = gameOpt.get();
+            final var game = gameOpt.get();
 
             // Submit the guess
-            Game.GuessOutcome outcome = game.submitGuess(guess);
+            final var outcome = game.submitGuess(guess);
 
             // Content negotiation: check if browser is requesting HTML
             if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
@@ -164,7 +164,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
             }
 
             // Default to JSON response for API clients
-            GuessResult result = new GuessResult();
+            final var result = new GuessResult();
             result.setGameId(uuid);
             result.setGuess(guess);
             result.setNumGuesses(game.getNumGuesses());
@@ -175,7 +175,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
                 case CORRECT:
                     result.setResult(GuessResult.ResultEnum.CORRECT);
                     result.setMessage("Congratulations! You guessed the correct number in " + game.getNumGuesses() + " tries!");
-                    boolean newBestScore = gameService.updateBestScore(game.getNumGuesses());
+                    final var newBestScore = gameService.updateBestScore(game.getNumGuesses());
                     result.setNewBestScore(newBestScore);
                     if (newBestScore) {
                         result.setBestScore(game.getNumGuesses());
@@ -194,7 +194,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
             }
 
             // Build hypermedia links - STATE-DRIVEN AFFORDANCES
-            GuessResultLinks links = new GuessResultLinks();
+            final var links = new GuessResultLinks();
             links.setSelf(linkBuilder.buildSelfLink(uuid));
             links.setDelete(linkBuilder.buildDeleteGameLink(uuid));
             links.setNewGame(linkBuilder.buildNewGameLink());
@@ -207,7 +207,7 @@ public class GameApiDelegateImpl implements GameApiDelegate {
 
             result.setLinks(links);
 
-            String jsonResponse = objectMapper.writeValueAsString(result);
+            final var jsonResponse = objectMapper.writeValueAsString(result);
             return ResponseEntity.status(HttpStatus.CREATED).body(jsonResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -222,8 +222,8 @@ public class GameApiDelegateImpl implements GameApiDelegate {
      * @return 204 No Content if successful, 404 if game not found
      */
     @Override
-    public ResponseEntity<Void> gamesUuidDelete(UUID uuid) {
-        Optional<Game> gameOpt = gameService.getGame(uuid);
+    public ResponseEntity<Void> gamesUuidDelete(final UUID uuid) {
+        final var gameOpt = gameService.getGame(uuid);
 
         if (gameOpt.isEmpty()) {
             return ResponseEntity.notFound().build();

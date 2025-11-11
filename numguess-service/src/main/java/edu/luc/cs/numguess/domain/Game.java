@@ -29,7 +29,7 @@ public class Game {
      *
      * @param id the UUID for this game
      */
-    public Game(UUID id) {
+    public Game(final UUID id) {
         this.id = id;
         this.secretNumber = RANDOM.nextInt(100) + 1; // 1-100 inclusive
         this.guesses = new ArrayList<>();
@@ -71,7 +71,7 @@ public class Game {
         if (guesses.isEmpty()) {
             return null;
         }
-        int lastGuess = guesses.get(guesses.size() - 1);
+        final int lastGuess = guesses.get(guesses.size() - 1);
         if (lastGuess == secretNumber) {
             return GuessOutcome.CORRECT;
         } else if (lastGuess < secretNumber) {
@@ -88,7 +88,7 @@ public class Game {
      * @param guess the guessed number
      * @return the outcome (CORRECT, TOO_LOW, or TOO_HIGH)
      */
-    public GuessOutcome submitGuess(int guess) {
+    public GuessOutcome submitGuess(final int guess) {
         guesses.add(guess);
 
         if (guess == secretNumber) {
@@ -111,7 +111,7 @@ public class Game {
 
         private final String apiValue;
 
-        GuessOutcome(String apiValue) {
+        GuessOutcome(final String apiValue) {
             this.apiValue = apiValue;
         }
 
