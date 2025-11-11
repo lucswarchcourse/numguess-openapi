@@ -66,9 +66,9 @@ info:
     url: https://github.com/lucswarchcourse/numguess-openapi
 
 servers:
-  - url: http://localhost:3000/numguess-restlet
+  - url: http://localhost:3000/numguess
     description: Standalone server
-  - url: http://localhost:8080/numguess-restlet
+  - url: http://localhost:8080/numguess
     description: Servlet container deployment
 
 tags:
@@ -111,10 +111,10 @@ paths:
                 message: "Welcome to the Number Guessing Game API"
                 _links:
                   self:
-                    href: "http://localhost:3000/numguess-restlet/"
+                    href: "http://localhost:3000/numguess/"
                     type: "application/json"
                   games:
-                    href: "http://localhost:3000/numguess-restlet/games"
+                    href: "http://localhost:3000/numguess/games"
                     type: "application/json"
                     title: "Games collection"
             application/hal+json:
@@ -128,7 +128,7 @@ paths:
               schema:
                 type: string
                 format: uri
-                example: http://localhost:3000/numguess-restlet/games
+                example: http://localhost:3000/numguess/games
 
   /games:
     get:
@@ -177,15 +177,15 @@ paths:
                 totalGames: 5
                 _links:
                   self:
-                    href: "http://localhost:3000/numguess-restlet/games"
+                    href: "http://localhost:3000/numguess/games"
                     type: "application/json"
                   create-game:
-                    href: "http://localhost:3000/numguess-restlet/games"
+                    href: "http://localhost:3000/numguess/games"
                     method: "POST"
                     type: "application/json"
                     title: "Create a new game"
                   root:
-                    href: "http://localhost:3000/numguess-restlet/"
+                    href: "http://localhost:3000/numguess/"
                     type: "application/json"
                     title: "API root"
             application/hal+json:
@@ -230,7 +230,7 @@ paths:
               schema:
                 type: string
                 format: uri
-                example: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                example: http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000
           content:
             application/xhtml+xml:
               schema:
@@ -244,19 +244,19 @@ paths:
                 message: "Game created successfully. Submit your first guess!"
                 _links:
                   self:
-                    href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                    href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                     type: "application/json"
                   submit-guess:
-                    href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                    href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                     method: "POST"
                     type: "application/x-www-form-urlencoded"
                     title: "Submit a guess"
                   delete:
-                    href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                    href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                     method: "DELETE"
                     title: "Delete this game"
                   games:
-                    href: "http://localhost:3000/numguess-restlet/games"
+                    href: "http://localhost:3000/numguess/games"
                     type: "application/json"
                     title: "Games collection"
             application/hal+json:
@@ -335,24 +335,24 @@ paths:
                 message: "Please submit your guess between 1 and 100."
                 _links:
                   self:
-                    href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                    href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                     type: "application/json"
                   submit-guess:
-                    href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                    href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                     method: "POST"
                     type: "application/x-www-form-urlencoded"
                     title: "Submit a guess"
                   delete:
-                    href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                    href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                     method: "DELETE"
                     title: "Delete this game"
                   new-game:
-                    href: "http://localhost:3000/numguess-restlet/games"
+                    href: "http://localhost:3000/numguess/games"
                     method: "POST"
                     type: "application/json"
                     title: "Create a new game"
                   games:
-                    href: "http://localhost:3000/numguess-restlet/games"
+                    href: "http://localhost:3000/numguess/games"
                     type: "application/json"
                     title: "Games collection"
             application/hal+json:
@@ -453,19 +453,19 @@ paths:
                     newBestScore: true
                     _links:
                       self:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         type: "application/json"
                       delete:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         method: "DELETE"
                         title: "Delete this game"
                       new-game:
-                        href: "http://localhost:3000/numguess-restlet/games"
+                        href: "http://localhost:3000/numguess/games"
                         method: "POST"
                         type: "application/json"
                         title: "Create a new game"
                       games:
-                        href: "http://localhost:3000/numguess-restlet/games"
+                        href: "http://localhost:3000/numguess/games"
                         type: "application/json"
                         title: "Games collection"
                 tooLow:
@@ -480,24 +480,24 @@ paths:
                     newBestScore: false
                     _links:
                       self:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         type: "application/json"
                       submit-guess:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         method: "POST"
                         type: "application/x-www-form-urlencoded"
                         title: "Submit another guess"
                       delete:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         method: "DELETE"
                         title: "Delete this game"
                       new-game:
-                        href: "http://localhost:3000/numguess-restlet/games"
+                        href: "http://localhost:3000/numguess/games"
                         method: "POST"
                         type: "application/json"
                         title: "Create a new game"
                       games:
-                        href: "http://localhost:3000/numguess-restlet/games"
+                        href: "http://localhost:3000/numguess/games"
                         type: "application/json"
                         title: "Games collection"
                 tooHigh:
@@ -512,24 +512,24 @@ paths:
                     newBestScore: false
                     _links:
                       self:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         type: "application/json"
                       submit-guess:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         method: "POST"
                         type: "application/x-www-form-urlencoded"
                         title: "Submit another guess"
                       delete:
-                        href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+                        href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
                         method: "DELETE"
                         title: "Delete this game"
                       new-game:
-                        href: "http://localhost:3000/numguess-restlet/games"
+                        href: "http://localhost:3000/numguess/games"
                         method: "POST"
                         type: "application/json"
                         title: "Create a new game"
                       games:
-                        href: "http://localhost:3000/numguess-restlet/games"
+                        href: "http://localhost:3000/numguess/games"
                         type: "application/json"
                         title: "Games collection"
             application/hal+json:
@@ -698,7 +698,7 @@ components:
           format: uri
           description: URI of the newly created game resource (deprecated - use _links.self instead)
           deprecated: true
-          example: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+          example: http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000
         message:
           type: string
           description: Success message
@@ -881,10 +881,10 @@ components:
         message: "Welcome to the Number Guessing Game API"
         _links:
           self:
-            href: "http://localhost:3000/numguess-restlet/"
+            href: "http://localhost:3000/numguess/"
             type: "application/json"
           games:
-            href: "http://localhost:3000/numguess-restlet/games"
+            href: "http://localhost:3000/numguess/games"
             type: "application/json"
             title: "Games collection"
 
@@ -893,7 +893,7 @@ components:
       description: Example request to create a new game
       value:
         method: POST
-        url: http://localhost:3000/numguess-restlet/games/
+        url: http://localhost:3000/numguess/games/
         headers:
           Accept: application/json
         body: {}
@@ -908,19 +908,19 @@ components:
         message: "Game created successfully. Submit your first guess!"
         _links:
           self:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             type: "application/json"
           submit-guess:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             method: "POST"
             type: "application/x-www-form-urlencoded"
             title: "Submit a guess"
           delete:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             method: "DELETE"
             title: "Delete this game"
           games:
-            href: "http://localhost:3000/numguess-restlet/games"
+            href: "http://localhost:3000/numguess/games"
             type: "application/json"
             title: "Games collection"
 
@@ -929,7 +929,7 @@ components:
       description: Example request to submit a guess
       value:
         method: POST
-        url: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        url: http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000
         headers:
           Accept: application/json
           Content-Type: application/x-www-form-urlencoded
@@ -951,23 +951,23 @@ components:
         newBestScore: false
         _links:
           self:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             type: "application/json"
           submit-guess:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             method: "POST"
             type: "application/x-www-form-urlencoded"
             title: "Submit another guess"
           delete:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             method: "DELETE"
             title: "Delete this game"
           new-game:
-            href: "http://localhost:3000/numguess-restlet/games"
+            href: "http://localhost:3000/numguess/games"
             method: "POST"
             title: "Create a new game"
           games:
-            href: "http://localhost:3000/numguess-restlet/games"
+            href: "http://localhost:3000/numguess/games"
             type: "application/json"
             title: "Games collection"
 
@@ -987,19 +987,19 @@ components:
         newBestScore: true
         _links:
           self:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             type: "application/json"
           delete:
-            href: "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000"
+            href: "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000"
             method: "DELETE"
             title: "Delete this game"
           new-game:
-            href: "http://localhost:3000/numguess-restlet/games"
+            href: "http://localhost:3000/numguess/games"
             method: "POST"
             type: "application/json"
             title: "Create a new game"
           games:
-            href: "http://localhost:3000/numguess-restlet/games"
+            href: "http://localhost:3000/numguess/games"
             type: "application/json"
             title: "Games collection"
 
@@ -1008,7 +1008,7 @@ components:
       description: Example request to delete a game instance
       value:
         method: DELETE
-        url: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        url: http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000
         headers:
           Accept: application/json
 

@@ -91,11 +91,11 @@ Entry point for API discovery.
   "message": "Welcome to the Number Guessing Game API",
   "_links": {
     "self": {
-      "href": "http://localhost:3000/numguess-restlet/",
+      "href": "http://localhost:3000/numguess/",
       "type": "application/json"
     },
     "games": {
-      "href": "http://localhost:3000/numguess-restlet/games",
+      "href": "http://localhost:3000/numguess/games",
       "type": "application/json",
       "title": "Games collection"
     }

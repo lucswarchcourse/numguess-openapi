@@ -78,7 +78,7 @@ public class GameCreationResponse {
    * @deprecated
    */
   @Valid 
-  @Schema(name = "href", example = "http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000", description = "URI of the newly created game resource (deprecated - use _links.self instead)", deprecated = true, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @Schema(name = "href", example = "http://localhost:3000/numguess/games/550e8400-e29b-41d4-a716-446655440000", description = "URI of the newly created game resource (deprecated - use _links.self instead)", deprecated = true, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("href")
   @Deprecated
   public @Nullable URI getHref() {
