@@ -1,0 +1,1116 @@
+openapi: 3.0.3
+info:
+  contact:
+    name: Loyola University Chicago COMP 373/473 Software Architecture Course
+    url: https://github.com/lucswarchcourse/numguess-openapi
+  description: |
+    A RESTful API for a number guessing game.
+
+    The game allows players to:
+    - Create new game instances
+    - Submit guesses for a number between 1 and 100
+    - Track the number of guesses and best scores
+
+    ## Richardson Maturity Model Level 3 (HATEOAS)
+
+    This API implements **Level 3 of the Richardson Maturity Model** by providing comprehensive
+    hypermedia controls in all JSON responses. Clients can navigate the entire API by following
+    links, without hardcoding URLs or business logic about available actions.
+
+    ### Hypermedia Format
+
+    The API uses **HAL (Hypertext Application Language)** conventions with `_links` objects
+    containing link relations. Supported media types:
+    - `application/json` - JSON with embedded hypermedia controls
+    - `application/hal+json` - Explicit HAL format
+    - `application/xhtml+xml` - HTML forms (for browser interaction)
+
+    ### Standard Link Relations
+
+    All responses include a `_links` object with the following standard relations:
+
+    - **self**: Link to the current resource
+    - **games**: Link to the games collection
+    - **create-game**: Action link to create a new game (POST)
+    - **submit-guess**: Action link to submit a guess (POST) - only present when game is active
+    - **new-game**: Action link to create a new game
+    - **delete**: Action link to delete the current game (DELETE)
+    - **root**: Link back to API root
+
+    ### State-Driven Affordances
+
+    Links are **contextual** and change based on application state:
+    - Active games include `submit-guess` link
+    - Completed games omit `submit-guess` link (game is won)
+    - This enables clients to discover available actions without domain knowledge
+
+    ### Client Benefits
+
+    - **Discoverability**: Start at root (`/`) and follow links to navigate the API
+    - **Decoupling**: No hardcoded URLs - server controls resource URIs
+    - **Evolvability**: Server can change URLs without breaking clients
+    - **Self-documentation**: Links include `method`, `type`, and `title` hints
+
+    ### Example Client Flow
+
+    ```
+    1. GET /                    → Discover _links.games
+    2. GET /games               → Discover _links.create-game
+    3. POST /games              → Receive _links.self and _links.submit-guess
+    4. POST /games/{uuid}       → Follow _links based on result
+       - If game active: use _links.submit-guess to continue
+       - If game won: use _links.new-game to play again
+    ```
+  title: Number Guessing Game API
+  version: 1.0.0
+servers:
+- description: Standalone server
+  url: http://localhost:3000/numguess-restlet
+- description: Servlet container deployment
+  url: http://localhost:8080/numguess-restlet
+tags:
+- description: Operations for managing game collections
+  name: games
+- description: Operations for individual game instances
+  name: game
+paths:
+  /:
+    get:
+      description: |
+        Returns the API root resource with hypermedia controls (Level 3 HATEOAS).
+        This endpoint serves as the entry point to the API, providing discoverable links to all top-level resources.
+
+        For HTML clients, may return HTTP 303 See Other redirect to `/games`.
+        For JSON clients, returns hypermedia representation with navigational links.
+      parameters:
+      - description: Content type preference
+        explode: false
+        in: header
+        name: Accept
+        required: false
+        schema:
+          default: application/json
+          enum:
+          - application/json
+          - application/hal+json
+          - application/xhtml+xml
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                message: Welcome to the Number Guessing Game API
+                _links:
+                  self:
+                    href: http://localhost:3000/numguess-restlet/
+                    type: application/json
+                  games:
+                    href: http://localhost:3000/numguess-restlet/games
+                    type: application/json
+                    title: Games collection
+              schema:
+                $ref: "#/components/schemas/ApiRoot"
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/ApiRoot"
+          description: API root representation with hypermedia controls
+        "303":
+          description: See Other - Redirect to /games (for HTML clients)
+          headers:
+            Location:
+              description: URI of the games collection
+              explode: false
+              schema:
+                example: http://localhost:3000/numguess-restlet/games
+                format: uri
+                type: string
+              style: simple
+      summary: Get API root
+      tags:
+      - games
+      x-accepts:
+      - application/hal+json
+      - application/json
+      x-tags:
+      - tag: games
+  /games:
+    get:
+      description: |
+        Returns a welcome page (HTML) or games collection representation with hypermedia controls (JSON).
+        For HTML clients, this displays a form to start a new game.
+        For JSON clients, provides discoverable actions and navigation links (Level 3 HATEOAS).
+      parameters:
+      - description: Content type preference
+        explode: false
+        in: header
+        name: Accept
+        required: false
+        schema:
+          default: application/xhtml+xml
+          enum:
+          - application/xhtml+xml
+          - application/json
+          - application/hal+json
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/xhtml+xml:
+              example: |
+                <html>
+                  <head><title>Number Guessing Game: Welcome</title></head>
+                  <body>
+                    <form method="post" action="">
+                      <div>
+                        <input type="submit" value="play" />
+                      </div>
+                    </form>
+                  </body>
+                </html>
+              schema:
+                format: html
+                type: string
+            application/json:
+              example:
+                message: Welcome to the Number Guessing Game! Create a new game to
+                  start playing.
+                totalGames: 5
+                _links:
+                  self:
+                    href: http://localhost:3000/numguess-restlet/games
+                    type: application/json
+                  create-game:
+                    href: http://localhost:3000/numguess-restlet/games
+                    method: POST
+                    type: application/json
+                    title: Create a new game
+                  root:
+                    href: http://localhost:3000/numguess-restlet/
+                    type: application/json
+                    title: API root
+              schema:
+                $ref: "#/components/schemas/GamesCollection"
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/GamesCollection"
+          description: Welcome page or games collection representation with hypermedia
+            controls
+      summary: Get welcome page or games collection
+      tags:
+      - games
+      x-accepts:
+      - application/hal+json
+      - application/json
+      - application/xhtml+xml
+      x-tags:
+      - tag: games
+    post:
+      description: |
+        Creates a new number guessing game instance and returns hypermedia controls for interaction.
+        The game is initialized with a random number between 1 and 100.
+        A UUID is generated to uniquely identify the new game instance.
+
+        Following Level 3 HATEOAS principles, the response includes comprehensive hypermedia links
+        for all available actions: submitting guesses, deleting the game, or creating another game.
+      parameters:
+      - description: Content type preference
+        explode: false
+        in: header
+        name: Accept
+        required: false
+        schema:
+          default: application/xhtml+xml
+          enum:
+          - application/xhtml+xml
+          - application/json
+          - application/hal+json
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+        description: Empty body or form data (optional)
+        required: false
+      responses:
+        "201":
+          content:
+            application/xhtml+xml:
+              schema:
+                format: html
+                type: string
+            application/json:
+              example:
+                gameId: 550e8400-e29b-41d4-a716-446655440000
+                message: Game created successfully. Submit your first guess!
+                _links:
+                  self:
+                    href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                    type: application/json
+                  submit-guess:
+                    href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                    method: POST
+                    type: application/x-www-form-urlencoded
+                    title: Submit a guess
+                  delete:
+                    href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                    method: DELETE
+                    title: Delete this game
+                  games:
+                    href: http://localhost:3000/numguess-restlet/games
+                    type: application/json
+                    title: Games collection
+              schema:
+                $ref: "#/components/schemas/GameCreationResponse"
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/GameCreationResponse"
+          description: Game created successfully with hypermedia controls
+          headers:
+            Location:
+              description: URI of the newly created game resource
+              explode: false
+              schema:
+                example: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                format: uri
+                type: string
+              style: simple
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Internal server error
+      summary: Create a new game
+      tags:
+      - games
+      x-content-type: application/x-www-form-urlencoded
+      x-accepts:
+      - application/hal+json
+      - application/json
+      - application/xhtml+xml
+      x-tags:
+      - tag: games
+  /games/{uuid}:
+    delete:
+      description: |
+        Deletes the specified game instance identified by its UUID.
+        This removes the game from the collection of active games.
+
+        Following REST principles, this operation is idempotent - deleting a non-existent game
+        should return 404, but deleting the same game multiple times has the same effect as deleting it once.
+      parameters:
+      - description: The unique identifier (UUID) of the game to delete
+        explode: false
+        in: path
+        name: uuid
+        required: true
+        schema:
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Game deleted successfully (No Content)
+        "404":
+          content:
+            application/json:
+              example:
+                error: Game not found
+                status: 404
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Game not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Internal server error
+      summary: Delete a game instance
+      tags:
+      - game
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: game
+    get:
+      description: |
+        Returns a form (HTML) or game state representation with hypermedia controls (JSON).
+        The game allows guessing numbers between 1 and 100.
+
+        For JSON clients, provides full hypermedia controls including:
+        - Link to submit a guess (if game is still active)
+        - Link to delete the game
+        - Navigation links to related resources
+        - Current game state information
+
+        This enables client discoverability of available actions (Level 3 HATEOAS).
+      parameters:
+      - description: The unique identifier (UUID) of the game
+        explode: false
+        in: path
+        name: uuid
+        required: true
+        schema:
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        style: simple
+      - description: Content type preference
+        explode: false
+        in: header
+        name: Accept
+        required: false
+        schema:
+          default: application/xhtml+xml
+          enum:
+          - application/xhtml+xml
+          - application/json
+          - application/hal+json
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/xhtml+xml:
+              example: |
+                <html>
+                  <head><title>Number Guessing Game: Guess</title></head>
+                  <body>
+                    <p>Please submit your guess between 1 and 100.</p>
+                    <form method="post" action="">
+                      <div>
+                        <input type="text" name="guess" />
+                        <input type="submit" value="guess" />
+                      </div>
+                    </form>
+                  </body>
+                </html>
+              schema:
+                format: html
+                type: string
+            application/json:
+              example:
+                gameId: 550e8400-e29b-41d4-a716-446655440000
+                numGuesses: 3
+                active: true
+                message: Please submit your guess between 1 and 100.
+                _links:
+                  self:
+                    href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                    type: application/json
+                  submit-guess:
+                    href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                    method: POST
+                    type: application/x-www-form-urlencoded
+                    title: Submit a guess
+                  delete:
+                    href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                    method: DELETE
+                    title: Delete this game
+                  new-game:
+                    href: http://localhost:3000/numguess-restlet/games
+                    method: POST
+                    type: application/json
+                    title: Create a new game
+                  games:
+                    href: http://localhost:3000/numguess-restlet/games
+                    type: application/json
+                    title: Games collection
+              schema:
+                $ref: "#/components/schemas/GameState"
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+          description: Game representation with hypermedia controls
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Game not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Internal server error
+      summary: Get game representation
+      tags:
+      - game
+      x-accepts:
+      - application/hal+json
+      - application/json
+      - application/xhtml+xml
+      x-tags:
+      - tag: game
+    post:
+      description: |
+        Submits a guess for the specified game. The guess is compared against the secret number,
+        and a result is returned indicating whether the guess was correct, too high, or too low.
+
+        The response includes comprehensive hypermedia controls (Level 3 HATEOAS):
+        - Current game state and guess result
+        - Contextual action links based on game state:
+          * If game is still active: link to submit another guess
+          * If game is won: no submit-guess link (demonstrates state-driven affordances)
+        - Navigation links to create new games or return to collection
+        - Number of guesses made so far
+        - Best score tracking across all games
+
+        The hypermedia controls enable clients to navigate the application state without
+        hardcoding URLs or business logic about when actions are available.
+      parameters:
+      - description: The unique identifier (UUID) of the game
+        explode: false
+        in: path
+        name: uuid
+        required: true
+        schema:
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        style: simple
+      - description: Content type preference
+        explode: false
+        in: header
+        name: Accept
+        required: false
+        schema:
+          default: application/xhtml+xml
+          enum:
+          - application/xhtml+xml
+          - application/json
+          - application/hal+json
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            encoding:
+              guess:
+                explode: false
+                style: form
+            schema:
+              $ref: "#/components/schemas/_games__uuid__post_request"
+        description: The guess value
+        required: true
+      responses:
+        "201":
+          content:
+            application/xhtml+xml:
+              schema:
+                format: html
+                type: string
+            application/json:
+              examples:
+                correct:
+                  summary: Correct guess with hypermedia
+                  value:
+                    gameId: 550e8400-e29b-41d4-a716-446655440000
+                    guess: 42
+                    result: correct
+                    message: Congratulations! You guessed the correct number in 7
+                      tries!
+                    numGuesses: 7
+                    bestScore: 7
+                    newBestScore: true
+                    _links:
+                      self:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        type: application/json
+                      delete:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        method: DELETE
+                        title: Delete this game
+                      new-game:
+                        href: http://localhost:3000/numguess-restlet/games
+                        method: POST
+                        type: application/json
+                        title: Create a new game
+                      games:
+                        href: http://localhost:3000/numguess-restlet/games
+                        type: application/json
+                        title: Games collection
+                tooLow:
+                  summary: Guess too low with hypermedia
+                  value:
+                    gameId: 550e8400-e29b-41d4-a716-446655440000
+                    guess: 25
+                    result: too_low
+                    message: Your guess is too low. Try a higher number.
+                    numGuesses: 3
+                    bestScore: 5
+                    newBestScore: false
+                    _links:
+                      self:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        type: application/json
+                      submit-guess:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        method: POST
+                        type: application/x-www-form-urlencoded
+                        title: Submit another guess
+                      delete:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        method: DELETE
+                        title: Delete this game
+                      new-game:
+                        href: http://localhost:3000/numguess-restlet/games
+                        method: POST
+                        type: application/json
+                        title: Create a new game
+                      games:
+                        href: http://localhost:3000/numguess-restlet/games
+                        type: application/json
+                        title: Games collection
+                tooHigh:
+                  summary: Guess too high with hypermedia
+                  value:
+                    gameId: 550e8400-e29b-41d4-a716-446655440000
+                    guess: 75
+                    result: too_high
+                    message: Your guess is too high. Try a lower number.
+                    numGuesses: 2
+                    bestScore: 5
+                    newBestScore: false
+                    _links:
+                      self:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        type: application/json
+                      submit-guess:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        method: POST
+                        type: application/x-www-form-urlencoded
+                        title: Submit another guess
+                      delete:
+                        href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+                        method: DELETE
+                        title: Delete this game
+                      new-game:
+                        href: http://localhost:3000/numguess-restlet/games
+                        method: POST
+                        type: application/json
+                        title: Create a new game
+                      games:
+                        href: http://localhost:3000/numguess-restlet/games
+                        type: application/json
+                        title: Games collection
+              schema:
+                $ref: "#/components/schemas/GuessResult"
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/GuessResult"
+          description: Guess processed successfully with hypermedia controls
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Game not found
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Bad request (invalid guess format or value)
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Internal server error
+      summary: Submit a guess
+      tags:
+      - game
+      x-content-type: application/x-www-form-urlencoded
+      x-accepts:
+      - application/hal+json
+      - application/json
+      - application/xhtml+xml
+      x-tags:
+      - tag: game
+components:
+  examples:
+    ApiRootResponse:
+      description: |
+        Starting point for API discovery. Clients begin here and follow _links to navigate.
+        Demonstrates how hypermedia enables discoverability without documentation.
+      summary: API Root with hypermedia (Level 3)
+      value:
+        message: Welcome to the Number Guessing Game API
+        _links:
+          self:
+            href: http://localhost:3000/numguess-restlet/
+            type: application/json
+          games:
+            href: http://localhost:3000/numguess-restlet/games
+            type: application/json
+            title: Games collection
+    CreateGame:
+      description: Example request to create a new game
+      summary: Create a new game
+      value:
+        method: POST
+        url: http://localhost:3000/numguess-restlet/games/
+        headers:
+          Accept: application/json
+        body: {}
+    CreateGameResponse:
+      description: |
+        Response demonstrates Level 3 HATEOAS by providing all available actions as links.
+        Client discovers URLs and methods dynamically, no hardcoding needed.
+      summary: Game creation response with hypermedia
+      value:
+        gameId: 550e8400-e29b-41d4-a716-446655440000
+        message: Game created successfully. Submit your first guess!
+        _links:
+          self:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            type: application/json
+          submit-guess:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            method: POST
+            type: application/x-www-form-urlencoded
+            title: Submit a guess
+          delete:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            method: DELETE
+            title: Delete this game
+          games:
+            href: http://localhost:3000/numguess-restlet/games
+            type: application/json
+            title: Games collection
+    SubmitGuess:
+      description: Example request to submit a guess
+      summary: Submit a guess
+      value:
+        method: POST
+        url: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        headers:
+          Accept: application/json
+          Content-Type: application/x-www-form-urlencoded
+        body:
+          guess: 50
+    ActiveGameResponse:
+      description: |
+        When game is still active, response includes 'submit-guess' link.
+        This demonstrates state-driven affordances - available actions change with state.
+      summary: Guess result for active game (with submit-guess link)
+      value:
+        gameId: 550e8400-e29b-41d4-a716-446655440000
+        guess: 25
+        result: too_low
+        message: Your guess is too low. Try a higher number.
+        numGuesses: 3
+        bestScore: 5
+        newBestScore: false
+        _links:
+          self:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            type: application/json
+          submit-guess:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            method: POST
+            type: application/x-www-form-urlencoded
+            title: Submit another guess
+          delete:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            method: DELETE
+            title: Delete this game
+          new-game:
+            href: http://localhost:3000/numguess-restlet/games
+            method: POST
+            title: Create a new game
+          games:
+            href: http://localhost:3000/numguess-restlet/games
+            type: application/json
+            title: Games collection
+    CompletedGameResponse:
+      description: |
+        When game is won, 'submit-guess' link is ABSENT - demonstrating state-driven hypermedia.
+        Client knows game is complete because the affordance is removed, not via business logic.
+        This is a key Level 3 HATEOAS principle.
+      summary: Guess result for completed game (NO submit-guess link)
+      value:
+        gameId: 550e8400-e29b-41d4-a716-446655440000
+        guess: 42
+        result: correct
+        message: Congratulations! You guessed the correct number in 7 tries!
+        numGuesses: 7
+        bestScore: 7
+        newBestScore: true
+        _links:
+          self:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            type: application/json
+          delete:
+            href: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+            method: DELETE
+            title: Delete this game
+          new-game:
+            href: http://localhost:3000/numguess-restlet/games
+            method: POST
+            type: application/json
+            title: Create a new game
+          games:
+            href: http://localhost:3000/numguess-restlet/games
+            type: application/json
+            title: Games collection
+    DeleteGame:
+      description: Example request to delete a game instance
+      summary: Delete a game
+      value:
+        method: DELETE
+        url: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+        headers:
+          Accept: application/json
+  schemas:
+    Link:
+      description: A hypermedia link following HAL conventions
+      example:
+        templated: false
+        method: GET
+        href: https://openapi-generator.tech
+        type: type
+        title: title
+      properties:
+        href:
+          description: The URI of the linked resource
+          format: uri
+          type: string
+        templated:
+          default: false
+          description: Whether the href is a URI template
+          type: boolean
+        type:
+          description: Media type hint for the target resource
+          type: string
+        method:
+          description: HTTP method to use (for action links)
+          enum:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          type: string
+        title:
+          description: Human-readable title for the link
+          type: string
+      required:
+      - href
+      type: object
+    Links:
+      additionalProperties:
+        $ref: "#/components/schemas/Links_value"
+      description: Collection of hypermedia links (HAL _links)
+      type: object
+    ApiRoot:
+      description: API root resource with hypermedia controls
+      example:
+        _links:
+          games:
+            templated: false
+            method: GET
+            href: https://openapi-generator.tech
+            type: type
+            title: title
+          self:
+            templated: false
+            method: GET
+            href: https://openapi-generator.tech
+            type: type
+            title: title
+        message: Welcome to the Number Guessing Game API
+      properties:
+        message:
+          description: Welcome message
+          example: Welcome to the Number Guessing Game API
+          type: string
+        _links:
+          $ref: "#/components/schemas/ApiRoot__links"
+      required:
+      - _links
+      type: object
+    GamesCollection:
+      description: Games collection resource with hypermedia controls
+      properties:
+        message:
+          description: Welcome or informational message
+          example: Welcome to the Number Guessing Game! Create a new game to start
+            playing.
+          type: string
+        totalGames:
+          description: Total number of active games (optional)
+          example: 5
+          type: integer
+        _links:
+          $ref: "#/components/schemas/GamesCollection__links"
+      required:
+      - _links
+      type: object
+    GameCreationResponse:
+      description: Response containing hypermedia controls for newly created game
+        (HATEOAS Level 3)
+      properties:
+        gameId:
+          description: The unique identifier of the newly created game
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        href:
+          deprecated: true
+          description: URI of the newly created game resource (deprecated - use _links.self
+            instead)
+          example: http://localhost:3000/numguess-restlet/games/550e8400-e29b-41d4-a716-446655440000
+          format: uri
+          type: string
+        message:
+          description: Success message
+          example: Game created successfully. Submit your first guess!
+          type: string
+        _links:
+          $ref: "#/components/schemas/GameCreationResponse__links"
+      required:
+      - _links
+      - gameId
+      type: object
+    GameState:
+      description: Current state of a game with hypermedia controls
+      properties:
+        gameId:
+          description: The unique identifier of this game
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        numGuesses:
+          description: Number of guesses made so far
+          example: 3
+          minimum: 0
+          type: integer
+        active:
+          description: Whether the game is still active (not won)
+          example: true
+          type: boolean
+        message:
+          description: Instructional message for the player
+          example: Please submit your guess between 1 and 100.
+          type: string
+        _links:
+          $ref: "#/components/schemas/GameState__links"
+      required:
+      - _links
+      - active
+      - gameId
+      - numGuesses
+      type: object
+    GuessResult:
+      description: Result of a guess submission with hypermedia controls
+      properties:
+        gameId:
+          description: The unique identifier of this game
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        guess:
+          description: The guessed number that was submitted
+          example: 42
+          type: integer
+        result:
+          description: The outcome of the guess
+          enum:
+          - correct
+          - too_high
+          - too_low
+          example: correct
+          type: string
+        comparison:
+          deprecated: true
+          description: |
+            Comparison result (deprecated - use 'result' instead):
+            - 0: guess is correct
+            - positive value: guess is too high (difference from correct answer)
+            - negative value: guess is too low (difference from correct answer)
+          example: 0
+          type: integer
+        message:
+          description: Human-readable feedback on the guess
+          example: Congratulations! You guessed the correct number in 7 tries!
+          type: string
+        numGuesses:
+          description: Total number of guesses made in this game so far
+          example: 7
+          minimum: 1
+          type: integer
+        bestScore:
+          description: Best score (lowest number of guesses) across all games
+          example: 5
+          minimum: 1
+          type: integer
+        newBestScore:
+          description: Whether this guess resulted in a new best score (only true
+            when guess is correct and sets a new record)
+          example: true
+          type: boolean
+        _links:
+          $ref: "#/components/schemas/GuessResult__links"
+      required:
+      - _links
+      - bestScore
+      - gameId
+      - guess
+      - newBestScore
+      - numGuesses
+      - result
+      type: object
+    Error:
+      description: Error response
+      example:
+        error: error
+        status: 0
+      properties:
+        error:
+          description: Error message
+          type: string
+        status:
+          description: HTTP status code
+          type: integer
+      type: object
+    _games__uuid__post_request:
+      properties:
+        guess:
+          description: The guessed number (must be between 1 and 100)
+          example: 50
+          maximum: 100
+          minimum: 1
+          type: integer
+      required:
+      - guess
+      type: object
+    Links_value:
+      oneOf:
+      - $ref: "#/components/schemas/Link"
+      - items:
+          $ref: "#/components/schemas/Link"
+        type: array
+      x-one-of-name: LinksValue
+    ApiRoot__links:
+      example:
+        games:
+          templated: false
+          method: GET
+          href: https://openapi-generator.tech
+          type: type
+          title: title
+        self:
+          templated: false
+          method: GET
+          href: https://openapi-generator.tech
+          type: type
+          title: title
+      properties:
+        self:
+          $ref: "#/components/schemas/Link"
+        games:
+          $ref: "#/components/schemas/Link"
+      required:
+      - games
+      - self
+      type: object
+    GamesCollection__links:
+      properties:
+        self:
+          $ref: "#/components/schemas/Link"
+        create-game:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link to create a new game
+        root:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link back to API root
+      required:
+      - create-game
+      - self
+      type: object
+    GameCreationResponse__links:
+      properties:
+        self:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link to this game resource
+        submit-guess:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to submit a guess
+        delete:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to delete this game
+        games:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link back to games collection
+      required:
+      - delete
+      - games
+      - self
+      - submit-guess
+      type: object
+    GameState__links:
+      properties:
+        self:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link to this game resource
+        submit-guess:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to submit a guess (only present if game is active)
+        delete:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to delete this game
+        new-game:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to create a new game
+        games:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link back to games collection
+      required:
+      - self
+      type: object
+    GuessResult__links:
+      properties:
+        self:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link to this game resource
+        submit-guess:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to submit another guess (only if game still active)
+        delete:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to delete this game
+        new-game:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Action link to create a new game
+        games:
+          allOf:
+          - $ref: "#/components/schemas/Link"
+          description: Link back to games collection
+      required:
+      - self
+      type: object

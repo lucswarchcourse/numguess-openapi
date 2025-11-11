@@ -22,11 +22,64 @@ We’re trying to take an API‑first approach:
 
 The API documentation is generated using `redocly` and available [here](doc/redoc-static.html); you can prefix the documentation page with `https://htmlpreview.github.io/?` for it to render properly.
 
-## Where we’re headed next
+## Implementation Strategy
 
-We’re going to experiment with OpenAPI Generator to build a modern web service/app from this spec. The goal is to regenerate a clean, maintainable implementation (e.g., Spring Boot, Node/Express, or another stack) directly from `openapi.yaml`, and then iterate on the design and code together.
+We're using OpenAPI Generator to create a Spring Boot server stub directly from `openapi.yaml`, then implementing the business logic in custom delegate classes. This approach keeps generated and manual code cleanly separated:
+
+- **Generated Code** (read-only, regenerable): Interfaces, model classes, and base structure in `org.openapitools.*` packages
+- **Manual Implementation** (maintained by developers): Business logic and delegates in `edu.luc.cs.numguess.*` packages
+- **Separation by Package**: Clear boundaries make it obvious which code is auto-generated vs. hand-written
+
+### Regenerating the Spring Boot Service
+
+If you modify `openapi.yaml` and need to regenerate the service boilerplate:
+
+```bash
+# Install the OpenAPI Generator CLI (if not already installed)
+npm install -g @openapitools/openapi-generator-cli
+
+# Regenerate the Spring Boot service from the OpenAPI spec
+openapi-generator-cli generate \
+  -i openapi.yaml \
+  -g spring-boot \
+  -o numguess-service \
+  -c openapitools.json
+```
+
+The `openapitools.json` configuration file controls generator behavior. After regeneration, the service will be ready to build and run.
+
+### Project Structure
+
+- `openapi.yaml` - API specification (source of truth)
+- `openapitools.json` - OpenAPI Generator configuration
+- `numguess-service/` - Spring Boot application
+  - `src/main/java/org/openapitools/` - Generated code (interfaces, models, controllers)
+  - `src/main/java/edu/luc/cs/numguess/` - Custom implementation code
+    - `delegate/` - Implementations of generated `*ApiDelegate` interfaces
+    - `domain/` - Business domain model classes (e.g., `Game.java`)
+    - `service/` - Business logic and service layer (e.g., `GameService.java`)
+    - `util/` - Utility classes (e.g., `HateoasLinkBuilder.java`)
+
+### Building and Running
+
+```bash
+cd numguess-service
+
+# Build the project
+./mvnw clean package
+
+# Run the Spring Boot application
+./mvnw spring-boot:run
+
+# Access the Swagger UI
+# http://localhost:8080/swagger-ui.html
+```
 
 ## Status
 
-This is the beginning of the new journey. The legacy Restlet code served as a blueprint, the OpenAPI spec is our current source of truth, and the next steps will focus on code generation and modernization around that spec.
+The API specification is complete with Level 3 HATEOAS support (state-driven affordances). The Spring Boot implementation includes:
+- Core domain model with game logic
+- Service layer for game management
+- Delegate implementations with HATEOAS link assembly
+- Full error handling and validation
 

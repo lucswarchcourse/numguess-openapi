@@ -39,3 +39,9 @@ project/project/
 
 # Mac files
 .DS_Store
+
+# Generated service build artifacts (keep source, ignore binaries)
+numguess-service/target/
+numguess-service/.mvn/
+numguess-service/mvnw
+numguess-service/mvnw.cmd
