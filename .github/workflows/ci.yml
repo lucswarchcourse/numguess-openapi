@@ -48,16 +48,7 @@ jobs:
           files: numguess-service/target/surefire-reports/TEST-*.xml
           check_name: Test Results (Java ${{ matrix.java-version }})
 
-      - name: Generate Coverage Report
-        run: mvn jacoco:report
-        working-directory: numguess-service
-        continue-on-error: true
-
-      - name: Upload Coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./numguess-service/target/site/jacoco/jacoco.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+      # JaCoCo report generation is skipped due to Java 25 class format incompatibility
+      # with current JaCoCo releases (0.8.12). This will be restored when JaCoCo 0.8.13+
+      # is released with Java 25 support. For now, coverage data is collected but not reported.
+      # See: https://github.com/jacoco/jacoco/issues/1634
