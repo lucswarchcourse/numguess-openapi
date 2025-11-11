@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(mvn clean compile:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(javac:*)"
     ],
     "deny": [],
     "ask": []
