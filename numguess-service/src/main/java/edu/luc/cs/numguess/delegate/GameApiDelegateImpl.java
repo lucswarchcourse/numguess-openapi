@@ -34,13 +34,15 @@ public class GameApiDelegateImpl implements GameApiDelegate {
     private final GameService gameService;
     private final HateoasLinkBuilder linkBuilder;
     private final ObjectMapper objectMapper;
+    private final HtmlRepresentationBuilder htmlBuilder;
     private NativeWebRequest request;
 
     @Autowired
-    public GameApiDelegateImpl(GameService gameService, HateoasLinkBuilder linkBuilder, ObjectMapper objectMapper) {
+    public GameApiDelegateImpl(GameService gameService, HateoasLinkBuilder linkBuilder, ObjectMapper objectMapper, HtmlRepresentationBuilder htmlBuilder) {
         this.gameService = gameService;
         this.linkBuilder = linkBuilder;
         this.objectMapper = objectMapper;
+        this.htmlBuilder = htmlBuilder;
     }
 
     @Override
@@ -77,11 +79,11 @@ public class GameApiDelegateImpl implements GameApiDelegate {
                 if (game.isActive()) {
                     return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_HTML)
-                        .body(HtmlRepresentationBuilder.buildGameActiveHtml(uuid, game));
+                        .body(htmlBuilder.buildGameActiveHtml(uuid, game));
                 } else {
                     return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_HTML)
-                        .body(HtmlRepresentationBuilder.buildGameCompleteHtml(uuid, game.getNumGuesses()));
+                        .body(htmlBuilder.buildGameCompleteHtml(uuid, game.getNumGuesses()));
                 }
             }
 

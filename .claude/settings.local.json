@@ -3,7 +3,8 @@
     "allow": [
       "Bash(mvn clean compile:*)",
       "Bash(git commit:*)",
-      "Bash(javac:*)"
+      "Bash(javac:*)",
+      "Bash(mvn clean test:*)"
     ],
     "deny": [],
     "ask": []

@@ -30,13 +30,15 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     private final GameService gameService;
     private final HateoasLinkBuilder linkBuilder;
     private final ObjectMapper objectMapper;
+    private final HtmlRepresentationBuilder htmlBuilder;
     private NativeWebRequest request;
 
     @Autowired
-    public GamesApiDelegateImpl(GameService gameService, HateoasLinkBuilder linkBuilder, ObjectMapper objectMapper) {
+    public GamesApiDelegateImpl(GameService gameService, HateoasLinkBuilder linkBuilder, ObjectMapper objectMapper, HtmlRepresentationBuilder htmlBuilder) {
         this.gameService = gameService;
         this.linkBuilder = linkBuilder;
         this.objectMapper = objectMapper;
+        this.htmlBuilder = htmlBuilder;
     }
 
     @Override
@@ -59,7 +61,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
                 return ResponseEntity.ok()
                     .contentType(org.springframework.http.MediaType.TEXT_HTML)
-                    .body(HtmlRepresentationBuilder.buildGamesCollectionHtml());
+                    .body(htmlBuilder.buildGamesCollectionHtml());
             }
 
             // Default to JSON response for API clients
@@ -70,7 +72,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             // Build hypermedia links
             GamesCollectionLinks links = new GamesCollectionLinks();
             links.setSelf(linkBuilder.buildGamesCollectionLink());
-            links.setCreateGame(linkBuilder.buildCreateGameLink());
+            links.setCreateGame(linkBuilder.buildNewGameLink());
             links.setRoot(linkBuilder.buildApiRootLink());
 
             collection.setLinks(links);

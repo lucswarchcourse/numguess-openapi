@@ -98,6 +98,7 @@ public class HateoasLinkBuilder {
     /**
      * Builds an action link to create a new game.
      * Can be used to create the first game or to start a new game after winning.
+     * Also used in the games collection context for "create-game" relation.
      *
      * @return Link for POST /games
      */
@@ -110,16 +111,14 @@ public class HateoasLinkBuilder {
     }
 
     /**
-     * Builds an action link to create a game in the games collection context.
-     * Similar to buildNewGameLink but with additional type information.
+     * Alias for {@link #buildNewGameLink()}.
+     * Provided for semantic clarity when used in collection context.
      *
      * @return Link for POST /games (create-game relation)
+     * @deprecated Use {@link #buildNewGameLink()} instead
      */
+    @Deprecated(since = "1.1.0", forRemoval = true)
     public Link buildCreateGameLink() {
-        return new Link()
-            .href(URI.create(getBaseUrl() + "/games"))
-            .method(Link.MethodEnum.POST)
-            .type("application/json")
-            .title("Create a new game");
+        return buildNewGameLink();
     }
 }

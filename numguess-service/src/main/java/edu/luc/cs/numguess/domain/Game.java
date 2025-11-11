@@ -11,6 +11,13 @@ import java.util.UUID;
  * Separate from the API model classes in org.openapitools.model.
  */
 public class Game {
+    /**
+     * Thread-safe static Random instance shared across all game instances.
+     * Using a static instance is more efficient than creating a new Random per game,
+     * and avoids seed collision issues that can occur with rapid instance creation.
+     */
+    private static final Random RANDOM = new Random();
+
     private final UUID id;
     private final int secretNumber;
     private final List<Integer> guesses;
@@ -24,7 +31,7 @@ public class Game {
      */
     public Game(UUID id) {
         this.id = id;
-        this.secretNumber = new Random().nextInt(100) + 1; // 1-100 inclusive
+        this.secretNumber = RANDOM.nextInt(100) + 1; // 1-100 inclusive
         this.guesses = new ArrayList<>();
         this.active = true;
         this.createdAt = LocalDateTime.now();
