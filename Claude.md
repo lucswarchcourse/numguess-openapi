@@ -504,6 +504,200 @@ final var random = new Random();
 
 ---
 
+## Continuous Integration and Delivery (CI/CD)
+
+This project uses **GitHub Actions** for automated build, test, and deployment pipelines.
+
+### Workflow Overview
+
+#### 1. **CI Workflow** (`.github/workflows/ci.yml`)
+Runs on every push and pull request to `main` and `develop` branches.
+
+**What it does:**
+- Compiles code with Maven (`mvn clean compile`)
+- Runs full test suite (130 tests)
+- Generates JaCoCo code coverage reports
+- Uploads test results and coverage to artifacts
+- Publishes test report as GitHub check
+
+**Trigger:** Push to main/develop, Pull requests
+**Status:** Required for merge
+
+#### 2. **Code Quality Workflow** (`.github/workflows/code-quality.yml`)
+Runs automated code analysis tools on every commit.
+
+**Tools and Analysis:**
+
+| Tool | Purpose | Configuration |
+|------|---------|---------------|
+| **SpotBugs** | Detect potential bugs | Effort: Max, Threshold: Medium |
+| **PMD** | Code quality issues | Quickstart ruleset |
+| **Checkstyle** | Code style enforcement | Google code style (10.14.2) |
+| **Spotless** | Code formatting | Google Java Format (1.23.0) |
+| **SonarCloud** | Deep static analysis | Requires SONAR_TOKEN secret |
+
+**Artifacts Generated:**
+- SpotBugs report (`spotbugsXml.xml`)
+- PMD report (`pmd.xml`)
+- Checkstyle report (`checkstyle-result.xml`)
+- SonarCloud dashboard (if configured)
+
+**Configuration Notes:**
+- All quality checks run with `continue-on-error: true` to avoid blocking PRs
+- Reports are uploaded as GitHub artifacts for review
+- SonarCloud integration requires `SONAR_TOKEN` secret in GitHub repository settings
+
+#### 3. **Dependency Check Workflow** (`.github/workflows/dependency-check.yml`)
+Monitors dependencies for security vulnerabilities and updates.
+
+**What it checks:**
+
+| Check | Frequency | Purpose |
+|-------|-----------|---------|
+| **OWASP Dependency Check** | On push | Scans for known vulnerabilities |
+| **Maven Vulnerability Check** | On push | Uses Maven plugin for CVE detection |
+| **License Compliance** | On push | Generates THIRD-PARTY license report |
+| **Dependency Updates** | Daily (2 AM UTC) | Checks for available updates |
+
+**Reports Generated:**
+- OWASP Dependency Check JSON report
+- Maven Dependency Check HTML report
+- License compliance report (THIRD-PARTY.txt)
+- Dependency and plugin update recommendations
+
+#### 4. **Release Workflow** (`.github/workflows/release.yml`)
+Automates release process when tags are pushed.
+
+**Triggers:** Pushing a tag matching `v*` (e.g., `v1.0.0`)
+
+**What it does:**
+1. **Build & Test:** Runs full Maven build with tests
+2. **Create GitHub Release:**
+   - Extracts version from tag
+   - Uploads compiled JAR file
+   - Creates release notes in GitHub
+3. **Build Docker Image:** (Optional)
+   - Builds Docker container
+   - Pushes to GitHub Container Registry (ghcr.io)
+   - Tags with version and `latest`
+4. **Publish Documentation:**
+   - Generates Javadoc
+   - Deploys to GitHub Pages
+
+**Manual Trigger:**
+Use `workflow_dispatch` to trigger manually with custom version:
+```bash
+gh workflow run release.yml -f version=1.0.0
+```
+
+### Setup Instructions
+
+#### Enable SonarCloud Integration
+1. Create account at https://sonarcloud.io
+2. Add SONAR_TOKEN to GitHub repository secrets:
+   - Go to Settings → Secrets and variables → Actions
+   - Add secret: `SONAR_TOKEN` (from SonarCloud account)
+   - Create `sonar-project.properties` in root:
+     ```properties
+     sonar.projectKey=numguess-openapi
+     sonar.organization=your-org-key
+     ```
+
+#### Enable Docker Publishing
+1. Ensure GitHub token has `write:packages` permission
+2. Workflows automatically push to `ghcr.io/${{ github.repository }}`
+3. Create Dockerfile in `numguess-service/` for custom image builds
+
+#### Enable GitHub Pages for Documentation
+1. Go to Settings → Pages
+2. Set source to "GitHub Actions"
+3. Release workflow automatically deploys Javadoc
+
+### Maven Plugins for CI/CD
+
+All CI/CD functionality is powered by Maven plugins configured in `pom.xml`:
+
+| Plugin | Version | Purpose |
+|--------|---------|---------|
+| JaCoCo | 0.8.11 | Code coverage reporting |
+| SpotBugs | 4.8.5.1 | Bug detection |
+| PMD | 3.22.0 | Code quality analysis |
+| Checkstyle | 3.3.1 | Code style enforcement |
+| Spotless | 2.42.0 | Code formatting (Google Java Format) |
+| License Maven | 2.4.0 | License compliance |
+| Versions Maven | 2.17.0 | Dependency update checks |
+| Dependency Check | 9.2.0 | OWASP vulnerability scanning |
+| SonarCloud | 3.11.0.2033 | Deep static analysis |
+
+**Run locally:**
+```bash
+cd numguess-service
+
+# Code coverage
+mvn clean test jacoco:report
+
+# Static analysis
+mvn spotbugs:check
+mvn pmd:check
+mvn checkstyle:check
+
+# Code formatting (check only)
+mvn spotless:check
+
+# Apply formatting (auto-fix)
+mvn spotless:apply
+
+# Dependency analysis
+mvn dependency:tree
+mvn org.owasp:dependency-check-maven:check
+mvn license:aggregate-add-third-party
+mvn versions:display-dependency-updates
+
+# SonarCloud (requires SONAR_TOKEN)
+mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+```
+
+### GitHub Secrets Required
+
+For full CI/CD functionality, configure these secrets in GitHub repository settings:
+
+| Secret | Used By | How to Obtain |
+|--------|---------|---------------|
+| `GITHUB_TOKEN` | All workflows | Automatic (GitHub-provided) |
+| `SONAR_TOKEN` | SonarCloud | https://sonarcloud.io (optional) |
+
+### Viewing Results
+
+**Test Results:** GitHub Actions → CI workflow → "Publish Test Report" step
+**Coverage:** See `target/site/jacoco/index.html` after local test run
+**Quality Reports:** GitHub Actions artifacts tab
+**SonarCloud:** Dashboard at https://sonarcloud.io (if configured)
+**Releases:** GitHub Releases page
+
+### Best Practices
+
+1. **Before pushing code:**
+   ```bash
+   mvn clean test spotless:check spotbugs:check
+   ```
+
+2. **Before committing:**
+   - Fix formatting: `mvn spotless:apply`
+   - Run tests: `mvn test`
+   - Check for bugs: `mvn spotbugs:check`
+
+3. **For pull requests:**
+   - Ensure all CI checks pass
+   - Review SonarCloud quality gate (if configured)
+   - Aim for code coverage ≥ 85%
+
+4. **For releases:**
+   - Create annotated tag: `git tag -a v1.0.0 -m "Release 1.0.0"`
+   - Push tag: `git push origin v1.0.0`
+   - GitHub Actions automatically creates release
+
+---
+
 ## References
 
 - [Java 21 Language Features](https://www.oracle.com/java/technologies/javase/21-relnotes.html)

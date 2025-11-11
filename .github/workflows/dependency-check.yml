@@ -1,0 +1,113 @@
+name: Dependency Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run dependency checks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  dependency-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run dependency check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'numguess-openapi'
+          path: 'numguess-service'
+          format: 'JSON'
+          args: >
+            --enable-experimental
+            --scan numguess-service/pom.xml
+
+      - name: Upload Dependency Check Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports
+
+  vulnerable-dependencies:
+    name: Check for Vulnerable Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Check for vulnerabilities with Maven
+        run: mvn org.owasp:dependency-check-maven:check
+        working-directory: numguess-service
+        continue-on-error: true
+
+      - name: Upload Maven Dependency Check Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-dependency-check-report
+          path: numguess-service/target/dependency-check-report.html
+          if-no-files-found: ignore
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Check licenses with Maven
+        run: mvn license:aggregate-add-third-party
+        working-directory: numguess-service
+        continue-on-error: true
+
+      - name: Upload License Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: numguess-service/target/site/THIRD-PARTY.txt
+          if-no-files-found: ignore
+
+  update-checker:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Display dependency updates
+        run: mvn versions:display-dependency-updates
+        working-directory: numguess-service
+        continue-on-error: true
+
+      - name: Display plugin updates
+        run: mvn versions:display-plugin-updates
+        working-directory: numguess-service
+        continue-on-error: true
