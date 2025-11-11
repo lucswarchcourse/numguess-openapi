@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.luc.cs.numguess.domain.Game;
 import edu.luc.cs.numguess.service.GameService;
 import edu.luc.cs.numguess.util.HateoasLinkBuilder;
+import edu.luc.cs.numguess.util.HtmlRepresentationBuilder;
 import org.openapitools.api.GameApiDelegate;
 import org.openapitools.model.Error;
 import org.openapitools.model.GameState;
@@ -12,6 +13,7 @@ import org.openapitools.model.GuessResult;
 import org.openapitools.model.GuessResultLinks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -49,10 +51,11 @@ public class GameApiDelegateImpl implements GameApiDelegate {
     /**
      * GET /games/{uuid} - Returns the current game state.
      * Includes state-driven affordances: submit-guess link only appears if game is active.
+     * Returns HTML for browsers, JSON for API clients.
      *
      * @param uuid the game UUID
      * @param accept the Accept header value
-     * @return GameState with hypermedia controls, or 404 if game not found
+     * @return GameState with hypermedia controls, HTML representation, or 404 if game not found
      */
     @Override
     public ResponseEntity<String> gamesUuidGet(UUID uuid, String accept) {
@@ -69,7 +72,20 @@ public class GameApiDelegateImpl implements GameApiDelegate {
 
             Game game = gameOpt.get();
 
-            // Build response
+            // Content negotiation: check if browser is requesting HTML
+            if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
+                if (game.isActive()) {
+                    return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_HTML)
+                        .body(HtmlRepresentationBuilder.buildGameActiveHtml(uuid, game));
+                } else {
+                    return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_HTML)
+                        .body(HtmlRepresentationBuilder.buildGameCompleteHtml(uuid, game.getNumGuesses()));
+                }
+            }
+
+            // Default to JSON response for API clients
             GameState gameState = new GameState();
             gameState.setGameId(uuid);
             gameState.setNumGuesses(game.getNumGuesses());
@@ -102,12 +118,13 @@ public class GameApiDelegateImpl implements GameApiDelegate {
 
     /**
      * POST /games/{uuid} - Submits a guess for the game.
-     * Returns comprehensive state with state-driven affordances.
+     * For HTML clients (browsers), redirects back to the game page to display updated state.
+     * For JSON clients (API), returns GuessResult with state-driven affordances.
      *
      * @param uuid the game UUID
      * @param guess the guessed number (1-100)
      * @param accept the Accept header value
-     * @return GuessResult with hypermedia, or 404/400 on error
+     * @return GuessResult with hypermedia, HTML redirect, or 404/400 on error
      */
     @Override
     public ResponseEntity<String> gamesUuidPost(UUID uuid, Integer guess, String accept) {
@@ -136,7 +153,15 @@ public class GameApiDelegateImpl implements GameApiDelegate {
             // Submit the guess
             Game.GuessOutcome outcome = game.submitGuess(guess);
 
-            // Build response
+            // Content negotiation: check if browser is requesting HTML
+            if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
+                // For browsers, redirect back to game page to display updated state
+                return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .location(java.net.URI.create("/numguess/games/" + uuid))
+                    .build();
+            }
+
+            // Default to JSON response for API clients
             GuessResult result = new GuessResult();
             result.setGameId(uuid);
             result.setGuess(guess);

@@ -3,6 +3,7 @@ package edu.luc.cs.numguess.delegate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.luc.cs.numguess.service.GameService;
 import edu.luc.cs.numguess.util.HateoasLinkBuilder;
+import edu.luc.cs.numguess.util.HtmlRepresentationBuilder;
 import org.openapitools.api.GamesApiDelegate;
 import org.openapitools.model.GameCreationResponse;
 import org.openapitools.model.GameCreationResponseLinks;
@@ -10,6 +11,7 @@ import org.openapitools.model.GamesCollection;
 import org.openapitools.model.GamesCollectionLinks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -46,13 +48,22 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     /**
      * GET /games - Returns games collection representation.
      * Supports content negotiation via Accept header.
+     * Returns HTML for browsers, JSON for API clients.
      *
      * @param accept the Accept header value
-     * @return GamesCollection with hypermedia controls as JSON string
+     * @return GamesCollection with hypermedia controls as JSON string, or HTML page
      */
     @Override
     public ResponseEntity<String> gamesGet(String accept) {
         try {
+            // Content negotiation: check if browser is requesting HTML
+            if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
+                return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.TEXT_HTML)
+                    .body(HtmlRepresentationBuilder.buildGamesCollectionHtml());
+            }
+
+            // Default to JSON response for API clients
             GamesCollection collection = new GamesCollection();
             collection.setMessage("Welcome to the Number Guessing Game! Create a new game to start playing.");
             collection.setTotalGames(gameService.getTotalGames());
@@ -74,10 +85,11 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     /**
      * POST /games - Creates a new game.
-     * Returns the game with all available action links.
+     * For HTML clients (browsers), redirects to the game page.
+     * For JSON clients (API), returns GameCreationResponse with full hypermedia controls.
      *
      * @param accept the Accept header value
-     * @return GameCreationResponse with full hypermedia controls as JSON string
+     * @return GameCreationResponse with full hypermedia controls as JSON string, or redirect to game page
      */
     @Override
     public ResponseEntity<String> gamesPost(String accept) {
@@ -85,7 +97,15 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             // Create the game
             var game = gameService.createGame();
 
-            // Build response
+            // Content negotiation: check if browser is requesting HTML
+            if (accept != null && (accept.contains("text/html") || accept.contains("application/xhtml+xml"))) {
+                // For browsers, redirect to the game page which will display HTML
+                return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .location(URI.create("/numguess/games/" + game.getId()))
+                    .build();
+            }
+
+            // Default to JSON response for API clients
             GameCreationResponse response = new GameCreationResponse();
             response.setGameId(game.getId());
             response.setMessage("Game created successfully. Submit your first guess!");
