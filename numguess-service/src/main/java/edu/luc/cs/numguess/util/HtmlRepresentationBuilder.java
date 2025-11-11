@@ -278,7 +278,7 @@ public class HtmlRepresentationBuilder {
                 </div>
             </body>
             </html>
-            """, game.getNumGuesses(), uuid);
+            """, uuid.toString(), game.getNumGuesses());
     }
 
     /**
