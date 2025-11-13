@@ -698,6 +698,215 @@ For full CI/CD functionality, configure these secrets in GitHub repository setti
 
 ---
 
+## Azure Deployment
+
+This project is fully configured for deployment to Microsoft Azure using multiple deployment methods.
+
+### Quick Start
+
+```bash
+# Deploy with one command
+./deploy-to-azure.sh numguess-api
+```
+
+### Deployment Methods
+
+| Method | Time | Cost | Best For |
+|--------|------|------|----------|
+| **Quick Script** | 5-10 min | Free-B1 | Learning, demos |
+| **Maven Plugin** | 5-10 min | Free-B1 | Java developers |
+| **Docker** | 15-20 min | B1-S1 | Production, scalability |
+| **Infrastructure as Code** | 10-15 min | Flexible | Enterprise, compliance |
+
+### Key Files
+
+**Deployment:**
+- `Dockerfile` - Multi-stage container build (50 lines)
+- `.dockerignore` - Docker optimization
+- `deploy-to-azure.sh` - Automated deployment script (executable)
+- `azure-app-service.json` - ARM template for infrastructure
+- `pom.xml` - Azure Web Apps Maven plugin configured
+
+**Configuration:**
+- `application.properties` - Azure-ready with PORT environment variable
+- Health check endpoint: `/actuator/health`
+- Java runtime: Java 25 (both App Service and Docker)
+- Auto-scaling: Configurable tier (F1 free to S3 premium)
+
+### Prerequisites
+
+- Azure subscription (free tier available)
+- Azure CLI 2.50+ (`az --version`)
+- Maven 3.6+ (`mvn --version`)
+- Docker (optional, for container deployments)
+
+### Deployment Step-by-Step
+
+**1. Login to Azure**
+```bash
+az login
+```
+
+**2. Run Deployment**
+```bash
+# Uses defaults: Free tier, eastus region
+./deploy-to-azure.sh numguess-api
+
+# Custom configuration
+./deploy-to-azure.sh numguess-api my-resource-group eastus B1
+```
+
+**3. Access Application**
+```bash
+https://numguess-api.azurewebsites.net
+```
+
+### What Gets Deployed
+
+**Infrastructure (Azure):**
+- Resource Group (logical container)
+- App Service Plan (compute resources, Linux)
+- App Service (web application host)
+- Managed Identity (secure authentication)
+- Health checks configured
+- Logging enabled
+
+**Application (Spring Boot):**
+- JAR packaged as standalone application
+- Spring Boot default port 8080
+- Actuator health endpoint for monitoring
+- Production profile active
+
+### Post-Deployment Commands
+
+```bash
+# View logs
+az webapp log tail --resource-group numguess-rg --name numguess-api
+
+# Check health
+curl https://numguess-api.azurewebsites.net/actuator/health
+
+# Access Swagger UI
+https://numguess-api.azurewebsites.net/swagger-ui.html
+
+# Stop application
+az webapp stop --resource-group numguess-rg --name numguess-api
+
+# Start application
+az webapp start --resource-group numguess-rg --name numguess-api
+
+# Delete resources (cleanup)
+az group delete --name numguess-rg
+```
+
+### Configuration Options
+
+**Pricing Tiers:**
+- `F1` - Free (limited to 60 min/day)
+- `B1` - Basic (~$12/month)
+- `B2` - Standard (~$50/month)
+- `S1` - Premium (~$100+/month)
+
+**Regions:**
+- `eastus` - Default
+- `westus`, `westus2`, `centralus`, `northeurope`, etc.
+
+**Environment Variables:**
+- `PORT` - HTTP port (default 8080)
+- `SPRING_PROFILES_ACTIVE` - Spring profile (default: production)
+- `JAVA_OPTS` - JVM options (default: -Xmx512m -Xms256m)
+
+### Docker Deployment
+
+For container-based deployment:
+
+```bash
+# Build image
+docker build -t numguess-api:1.0.0 ./numguess-service
+
+# Run locally
+docker run -p 8080:8080 numguess-api:1.0.0
+
+# Push to Azure Container Registry
+az acr create --resource-group numguess-rg --name myregistry --sku Basic
+docker tag numguess-api:1.0.0 myregistry.azurecr.io/numguess-api:1.0.0
+docker push myregistry.azurecr.io/numguess-api:1.0.0
+
+# Deploy from registry
+az webapp create --resource-group numguess-rg \
+  --plan numguess-plan \
+  --name numguess-api \
+  --deployment-container-image-name myregistry.azurecr.io/numguess-api:1.0.0
+```
+
+### Monitoring
+
+**Azure Portal:**
+- CPU usage, memory usage, request metrics
+- Real-time logs and diagnostic settings
+- Application Insights integration
+
+**CLI Commands:**
+```bash
+# CPU usage
+az monitor metrics list --resource numguess-api \
+  --resource-group numguess-rg --metric CpuPercentage
+
+# Memory usage
+az monitor metrics list --resource numguess-api \
+  --resource-group numguess-rg --metric MemoryPercentage
+```
+
+### Cost Estimation (Monthly)
+
+| Tier | Compute | Storage | Monthly Cost |
+|------|---------|---------|--------------|
+| F1 (Free) | Shared | Shared | $0 (limited) |
+| B1 | 1.75GB RAM | 10GB | ~$12 |
+| B2 | 3.5GB RAM | 50GB | ~$50 |
+| S1 | 1.75GB RAM | 50GB | ~$50 |
+
+### Troubleshooting
+
+**Application won't start:**
+```bash
+az webapp log tail --resource-group numguess-rg --name numguess-api
+```
+
+**Port binding error:**
+Ensure `server.port=${PORT:8080}` in `application.properties`
+
+**Memory issues:**
+```bash
+# Scale up
+az appservice plan update --name numguess-plan \
+  --resource-group numguess-rg --sku B1
+
+# Adjust JVM
+az webapp config appsettings set \
+  --resource-group numguess-rg --name numguess-api \
+  --settings JAVA_OPTS="-Xmx1024m"
+```
+
+### Additional Resources
+
+See [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md) for:
+- Detailed deployment guides for each method
+- Advanced configuration options
+- Continuous deployment setup
+- Performance optimization
+- Troubleshooting guide
+
+### References
+
+- [Azure Deployment Guide](AZURE_DEPLOYMENT.md)
+- [Azure App Service Documentation](https://learn.microsoft.com/en-us/azure/app-service/)
+- [Spring Boot on Azure](https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/)
+- [Azure CLI Reference](https://learn.microsoft.com/en-us/cli/azure/reference-index)
+- [Java on Azure](https://learn.microsoft.com/en-us/azure/developer/java/)
+
+---
+
 ## References
 
 - [Java 21 Language Features](https://www.oracle.com/java/technologies/javase/21-relnotes.html)

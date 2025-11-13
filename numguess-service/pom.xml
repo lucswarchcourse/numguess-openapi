@@ -44,6 +44,38 @@
                 </configuration>
             </plugin>
 
+            <!-- Azure Web Apps Maven Plugin for deployment -->
+            <plugin>
+                <groupId>com.microsoft.azure</groupId>
+                <artifactId>azure-webapp-maven-plugin</artifactId>
+                <version>2.13.0</version>
+                <configuration>
+                    <!-- Deployment configuration: customize with your Azure resource group and app name -->
+                    <!-- Example: mvn azure-webapp:deploy -Dazure.appName=numguess-api -->
+                    <schemaVersion>v2</schemaVersion>
+                    <subscriptionId>${azure.subscriptionId}</subscriptionId>
+                    <resourceGroup>${azure.resourceGroup}</resourceGroup>
+                    <appName>${azure.appName}</appName>
+                    <pricingTier>F1</pricingTier>
+                    <region>eastus</region>
+                    <runtime>
+                        <os>linux</os>
+                        <javaVersion>25</javaVersion>
+                        <webContainer>java</webContainer>
+                    </runtime>
+                    <deployment>
+                        <resources>
+                            <resource>
+                                <directory>${project.basedir}/target</directory>
+                                <includes>
+                                    <include>*.jar</include>
+                                </includes>
+                            </resource>
+                        </resources>
+                    </deployment>
+                </configuration>
+            </plugin>
+
             <!-- JaCoCo for code coverage -->
             <!-- Note: JaCoCo reporting disabled due to Java 25 class format (v69) incompatibility -->
             <!-- with current JaCoCo releases. Prepare-agent runs but report generation skipped. -->

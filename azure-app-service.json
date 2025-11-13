@@ -1,0 +1,120 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure App Service (must be globally unique)"
+      },
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus",
+      "metadata": {
+        "description": "Azure region for deployment"
+      }
+    },
+    "pricingTier": {
+      "type": "string",
+      "defaultValue": "F1",
+      "allowedValues": ["F1", "B1", "B2", "B3", "S1", "S2", "S3"],
+      "metadata": {
+        "description": "App Service pricing tier (F1=Free, B=Basic, S=Standard)"
+      }
+    }
+  },
+  "variables": {
+    "appServicePlanName": "[concat(parameters('appName'), '-plan')]",
+    "appServiceName": "[parameters('appName')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('pricingTier')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('appServiceName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "siteConfig": {
+          "linuxFxVersion": "JAVA|25-java25",
+          "http20Enabled": true,
+          "minTlsVersion": "1.2",
+          "appSettings": [
+            {
+              "name": "PORT",
+              "value": "8080"
+            },
+            {
+              "name": "JAVA_OPTS",
+              "value": "-Xmx512m -Xms256m"
+            },
+            {
+              "name": "SPRING_PROFILES_ACTIVE",
+              "value": "production"
+            },
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            }
+          ],
+          "healthCheckPath": "/actuator/health",
+          "numberOfWorkers": 1,
+          "defaultDocuments": []
+        }
+      },
+      "resources": [
+        {
+          "type": "config",
+          "apiVersion": "2021-02-01",
+          "name": "web",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
+          ],
+          "properties": {
+            "numberOfWorkers": 1,
+            "defaultDocuments": [],
+            "netFrameworkVersion": "v4.0",
+            "requestTracingEnabled": false,
+            "remoteDebuggingEnabled": false,
+            "httpLoggingEnabled": true,
+            "detailedErrorLoggingEnabled": true,
+            "publishingUsername": "[concat('$', variables('appServiceName'))]"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "appServiceName": {
+      "type": "string",
+      "value": "[variables('appServiceName')]"
+    },
+    "appServiceUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('appServiceName'))).defaultHostName)]"
+    }
+  }
+}
