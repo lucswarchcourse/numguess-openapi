@@ -8,11 +8,12 @@ This guide covers deploying the Number Guessing Game API to Microsoft Azure usin
 2. [Deployment Options](#deployment-options)
 3. [Option 1: Quick Script Deployment](#option-1-quick-script-deployment)
 4. [Option 2: Maven Plugin Deployment](#option-2-maven-plugin-deployment)
-5. [Option 3: Docker Container Deployment](#option-3-docker-container-deployment)
-6. [Option 4: Infrastructure as Code (IaC)](#option-4-infrastructure-as-code-iac)
-7. [Post-Deployment Configuration](#post-deployment-configuration)
-8. [Monitoring and Troubleshooting](#monitoring-and-troubleshooting)
-9. [Cleanup](#cleanup)
+5. [Option 3: Docker Container Deployment](#option-3-docker-container-deployment) ⭐ **Recommended**
+6. [Option 3a: Azure Container Instances](#option-3a-azure-container-instances)
+7. [Option 4: Infrastructure as Code (IaC)](#option-4-infrastructure-as-code-iac)
+8. [Post-Deployment Configuration](#post-deployment-configuration)
+9. [Monitoring and Troubleshooting](#monitoring-and-troubleshooting)
+10. [Cleanup](#cleanup)
 
 ---
 
@@ -59,7 +60,8 @@ az account show
 |--------|-----------|-------|------|----------|
 | Quick Script | ⭐ Low | 🚀 Fast | 💰 Free-B1 | Learning, demos |
 | Maven Plugin | ⭐⭐ Low-Mid | 🚀 Fast | 💰 Free-B1 | Java developers |
-| Docker | ⭐⭐⭐ Mid-High | 📦 Medium | 💰 B1-S1 | Production |
+| Docker (App Service) | ⭐⭐⭐ Mid-High | 📦 Medium | 💰 B1-S1 | Production with scaling |
+| **Container Instances** | **⭐⭐ Low-Mid** | **🚀 Fast** | **💰 ~$10/mo** | **Students, lightweight apps** ⭐ |
 | Infrastructure as Code | ⭐⭐⭐⭐ High | 🏗️ Slow | 💰 Flexible | Enterprise |
 
 ---
@@ -270,6 +272,337 @@ The Dockerfile includes:
 - **Non-root user**: Security best practice
 - **Health check**: Docker health monitoring
 - **Spring profiles support**: Different environments
+
+---
+
+## Option 3a: Azure Container Instances
+
+**Simplest container deployment for lightweight apps.** ⭐ **Recommended for student subscriptions**
+
+Azure Container Instances (ACI) provides serverless container execution without needing to manage infrastructure. This option works around subscription limitations by using Docker Hub or GitHub Container Registry instead of Azure Container Registry.
+
+### Prerequisites
+
+- Docker installed locally
+- Docker Hub account (free) OR GitHub account (for ghcr.io)
+- Azure CLI 2.50+
+- Azure subscription with ACI enabled
+
+### Quick Start (5 minutes)
+
+```bash
+# 1. Build Docker image locally
+cd numguess-service
+docker build -t numguess-api:1.0.0 .
+
+# 2. Tag for Docker Hub (replace 'yourusername')
+docker tag numguess-api:1.0.0 yourusername/numguess-api:1.0.0
+
+# 3. Push to Docker Hub
+docker login
+docker push yourusername/numguess-api:1.0.0
+
+# 4. Deploy to Azure Container Instances
+az container create \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --image yourusername/numguess-api:1.0.0 \
+  --ports 8080 \
+  --cpu 1 \
+  --memory 1 \
+  --environment-variables SPRING_PROFILES_ACTIVE=production
+
+# 5. Get the public IP
+az container show --resource-group numguess-rg \
+  --name numguess-api \
+  --query ipAddress.ip --output tsv
+```
+
+**Application will be available at:** `http://<IP_ADDRESS>:8080`
+
+### Detailed Deployment
+
+#### Step 1: Build Docker Image Locally
+
+```bash
+# From project root
+cd numguess-service
+docker build -t numguess-api:1.0.0 .
+
+# Verify image was created
+docker images | grep numguess-api
+```
+
+**Output example:**
+```
+REPOSITORY       TAG      IMAGE ID      SIZE
+numguess-api     1.0.0    a1b2c3d4e5f6  185MB
+```
+
+#### Step 2: Push to Docker Hub (Recommended for simplicity)
+
+If Docker Hub is not available, skip to "Alternative: GitHub Container Registry" section.
+
+```bash
+# 1. Create free Docker Hub account at https://hub.docker.com/
+
+# 2. Login to Docker Hub
+docker login
+# Enter your Docker Hub username and password
+
+# 3. Tag image with your Docker Hub username
+docker tag numguess-api:1.0.0 YOUR_DOCKER_USERNAME/numguess-api:1.0.0
+
+# 4. Push image
+docker push YOUR_DOCKER_USERNAME/numguess-api:1.0.0
+
+# 5. Verify image is public
+# Visit https://hub.docker.com/r/YOUR_DOCKER_USERNAME/numguess-api
+```
+
+#### Step 2 (Alternative): GitHub Container Registry
+
+If using GitHub instead of Docker Hub:
+
+```bash
+# 1. Create GitHub Personal Access Token
+# Go to Settings → Developer settings → Personal access tokens → Generate new token
+# Select: write:packages, read:packages
+# Copy the token
+
+# 2. Login to GitHub Container Registry
+echo "YOUR_GITHUB_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+
+# 3. Tag image for ghcr.io
+docker tag numguess-api:1.0.0 ghcr.io/YOUR_GITHUB_USERNAME/numguess-api:1.0.0
+
+# 4. Push image
+docker push ghcr.io/YOUR_GITHUB_USERNAME/numguess-api:1.0.0
+
+# 5. Make image public (optional)
+# Go to Settings → Packages and libraries → Container Registry Settings
+```
+
+#### Step 3: Deploy to Azure Container Instances
+
+```bash
+# Ensure you're logged in to Azure
+az login
+az account show
+
+# Create resource group (if not exists)
+az group create --name numguess-rg --location eastus
+
+# Deploy container instance
+az container create \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --image YOUR_DOCKER_USERNAME/numguess-api:1.0.0 \
+  --ports 8080 \
+  --cpu 1 \
+  --memory 1 \
+  --environment-variables SPRING_PROFILES_ACTIVE=production \
+  --dns-name-label numguess-api-app
+
+# Get deployment details
+az container show \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --query "{FQDN:ipAddress.fqdn, IP:ipAddress.ip, Status:containers[0].instanceView.currentState.state}"
+```
+
+**For GitHub Container Registry, use:**
+```bash
+az container create \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --image ghcr.io/YOUR_GITHUB_USERNAME/numguess-api:1.0.0 \
+  --registry-login-server ghcr.io \
+  --registry-username YOUR_GITHUB_USERNAME \
+  --registry-password YOUR_GITHUB_TOKEN \
+  --ports 8080 \
+  --cpu 1 \
+  --memory 1 \
+  --environment-variables SPRING_PROFILES_ACTIVE=production \
+  --dns-name-label numguess-api-app
+```
+
+### Testing Deployment
+
+```bash
+# Get FQDN
+FQDN=$(az container show --resource-group numguess-rg \
+  --name numguess-api \
+  --query ipAddress.fqdn --output tsv)
+
+# Health check
+curl http://$FQDN:8080/actuator/health
+
+# Access Swagger UI
+echo "http://$FQDN:8080/swagger-ui.html"
+
+# Create a game
+curl -X POST http://$FQDN:8080/games \
+  -H "Content-Type: application/json" \
+  -d '{}' | jq .
+```
+
+### Container Resources
+
+#### CPU and Memory Options
+
+| CPU | Memory | Typical Use |
+|-----|--------|-------------|
+| 0.5 | 0.5 GB | Dev/test (lighter) |
+| 1.0 | 1.0 GB | **Recommended** |
+| 1.5 | 2.0 GB | Production light |
+| 2.0 | 3.5 GB | Production medium |
+| 4.0 | 7.0 GB | Production heavy |
+
+**For this Spring Boot app, 1 CPU / 1 GB memory is sufficient.**
+
+#### Environment Variables
+
+Configure via `--environment-variables`:
+
+```bash
+az container create \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --image yourusername/numguess-api:1.0.0 \
+  --environment-variables \
+    SPRING_PROFILES_ACTIVE=production \
+    JAVA_OPTS="-Xmx512m -Xms256m"
+```
+
+### Monitoring Container Instances
+
+```bash
+# View container status
+az container show \
+  --resource-group numguess-rg \
+  --name numguess-api
+
+# Stream container logs
+az container logs \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --follow
+
+# Get container events
+az container attach \
+  --resource-group numguess-rg \
+  --name numguess-api
+```
+
+### Updating Deployment
+
+To deploy a new version:
+
+```bash
+# 1. Build and push new version
+docker build -t yourusername/numguess-api:1.0.1 ./numguess-service
+docker push yourusername/numguess-api:1.0.1
+
+# 2. Delete old container
+az container delete \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --yes
+
+# 3. Deploy new container
+az container create \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --image yourusername/numguess-api:1.0.1 \
+  --ports 8080 \
+  --cpu 1 \
+  --memory 1 \
+  --environment-variables SPRING_PROFILES_ACTIVE=production \
+  --dns-name-label numguess-api-app
+```
+
+### Cost Estimation
+
+Azure Container Instances pricing (as of 2024):
+
+| Configuration | Est. Monthly Cost |
+|---------------|-------------------|
+| 0.5 CPU, 0.5 GB | ~$3 |
+| 1.0 CPU, 1.0 GB | ~$10 |
+| 2.0 CPU, 3.5 GB | ~$25 |
+
+**Note:** Based on 730 hours/month. Charges only when container is running.
+
+### Troubleshooting
+
+#### Container won't start
+
+```bash
+# Check logs
+az container logs --resource-group numguess-rg --name numguess-api
+
+# Check events
+az container show --resource-group numguess-rg --name numguess-api \
+  --query "containers[0].instanceView.events"
+```
+
+#### Health check failing
+
+Ensure `/actuator/health` endpoint is responding:
+
+```bash
+# Get FQDN
+FQDN=$(az container show --resource-group numguess-rg \
+  --name numguess-api --query ipAddress.fqdn --output tsv)
+
+# Test directly
+curl -v http://$FQDN:8080/actuator/health
+```
+
+#### Image not found
+
+Verify image is public or credentials are set:
+
+```bash
+# Test image locally
+docker pull yourusername/numguess-api:1.0.0
+docker run -p 8080:8080 yourusername/numguess-api:1.0.0
+```
+
+### Cleanup
+
+```bash
+# Delete container instance
+az container delete \
+  --resource-group numguess-rg \
+  --name numguess-api \
+  --yes
+
+# Delete resource group (removes all resources)
+az group delete --name numguess-rg --yes
+```
+
+### Why Container Instances for This Project
+
+✅ **Advantages:**
+- Simple, straightforward Docker deployment
+- No need for Azure Container Registry (works with Docker Hub/GitHub)
+- Lower cost than App Service for lightweight apps
+- Automatic resource scaling
+- Pay-per-second billing
+- Works great with student subscriptions
+
+✅ **Works around subscription limitations:**
+- Azure for Students doesn't have Container Registry namespace
+- Docker Hub/GitHub Container Registry provide free alternatives
+- No additional Azure service registration needed
+
+❌ **When NOT to use:**
+- Need persistent storage
+- Continuous availability required 24/7
+- Multiple instances needed
+- Complex networking requirements
 
 ---
 
