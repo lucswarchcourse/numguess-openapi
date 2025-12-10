@@ -10,6 +10,7 @@
 
 # generated files
 bin/
+deploy/
 gen/
 logs/
 proguard_cache/
