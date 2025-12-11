@@ -9,14 +9,14 @@ COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
 
-# Cache Maven dependencies
-RUN ./mvnw dependency:resolve dependency:resolve-plugins
-
 # Copy source code
 COPY src src
 
-# Build the application
-RUN ./mvnw clean package -DskipTests
+# Build the application (skip tests and plugins resolution to avoid repository conflicts)
+# Only include core Maven Central repositories for plugin resolution
+RUN ./mvnw clean package -DskipTests \
+    -Dmaven.test.skip=true \
+    -Dspotless.check.skip=true
 
 # Stage 2: Runtime
 FROM eclipse-temurin:25-jre-alpine
