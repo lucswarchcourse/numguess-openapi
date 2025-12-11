@@ -44,4 +44,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 8080
 
 # Run application
-ENTRYPOINT ["java", "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-production}", "-jar", "app.jar"]
+# Use /bin/sh to properly expand environment variables
+ENTRYPOINT ["/bin/sh", "-c", "java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-production} -jar app.jar"]
